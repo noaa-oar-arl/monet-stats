@@ -71,8 +71,11 @@ class TestKnownValues:
         # Mod Yes 30   10
         #     No  20   40
         
-        obs = np.array([1]*50 + [0]*50)  # 50 yes, 50 no
-        mod = np.array([1]*30 + [0]*10 + [1]*20 + [0]*40)  # 30 hits, 10 false alarms, 20 misses, 40 correct negatives
+        # obs: 50 yes, 50 no
+        # mod: 40 yes, 60 no
+        # hits: 30, false alarms: 10, misses: 20, correct negatives: 40
+        obs = np.concatenate([np.ones(30), np.zeros(10), np.ones(20), np.zeros(40)])
+        mod = np.concatenate([np.ones(40), np.zeros(60)])
         
         hr = hit_rate(obs, mod)
         far = false_alarm_rate(obs, mod)

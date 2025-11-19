@@ -55,22 +55,12 @@ def R2(obs, mod, axis=None):
             dim = axis
 
         def _pearsonr2(a, b):
-            r_val = pearsonr(a, b)
-            # Always extract first element if tuple
-            if isinstance(r_val, tuple):
-                r = r_val[0]
-            else:
-                r = r_val
-            if isinstance(r, tuple):
-                raise TypeError(f"pearsonr returned a tuple unexpectedly: {r}")
-            # If r is a numpy scalar, convert to float
-            import numpy as np
-
-            if isinstance(r, np.generic):
-                r = r.item()
-            if not isinstance(r, (float, int)):
-                raise TypeError(f"pearsonr returned non-numeric type: {type(r)}")
-            return float(r) ** 2
+            if np.var(a) == 0 or np.var(b) == 0:
+                return 0.0
+            r_val, _ = pearsonr(a, b)
+            if np.isnan(r_val):
+                return 0.0
+            return r_val**2
 
         r2 = xr.apply_ufunc(
             _pearsonr2,
@@ -85,20 +75,12 @@ def R2(obs, mod, axis=None):
         return r2
     elif axis is None:
         obsc, modc = matchedcompressed(obs, mod)
-        r_val = pearsonr(obsc, modc)
-        if isinstance(r_val, tuple):
-            r = r_val[0]
-        else:
-            r = r_val
-        if isinstance(r, tuple):
-            raise TypeError(f"pearsonr returned a tuple unexpectedly: {r}")
-        import numpy as np
-
-        if isinstance(r, np.generic):
-            r = r.item()
-        if not isinstance(r, (float, int)):
-            raise TypeError(f"pearsonr returned non-numeric type: {type(r)}")
-        return float(r) ** 2
+        if np.var(obsc) == 0 or np.var(modc) == 0:
+            return 0.0
+        r_val, _ = pearsonr(obsc, modc)
+        if np.isnan(r_val):
+            return 0.0
+        return r_val**2
     else:
         raise ValueError("Not ready yet")
 
@@ -145,6 +127,8 @@ def RMSE(obs, mod, axis=None):
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
         return np.sqrt(np.mean((mod - obs) ** 2, axis=axis))
     else:
+        obs = np.asarray(obs)
+        mod = np.asarray(mod)
         return np.ma.sqrt(np.ma.mean((mod - obs) ** 2, axis=axis))
 
 
@@ -560,9 +544,13 @@ def IOA_m(obs, mod, axis=None):
         denom = ((abs(mod - obsmean) + abs(obs - obsmean)) ** 2).sum(dim=axis)
         return 1.0 - (num / denom)
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
+        if np.array_equal(obs, mod):
+            return 1.0
         obsmean = obs.mean(axis=axis)
         num = (np.abs(obs - mod) ** 2).sum(axis=axis)
         denom = ((np.abs(mod - obsmean) + np.abs(obs - obsmean)) ** 2).sum(axis=axis)
+        if denom == 0:
+            return 1.0
         return 1.0 - (num / denom)
     else:
         obsmean = obs.mean(axis=axis)
@@ -965,9 +953,9 @@ def KGE(obs, mod, axis=None):
         xr = None
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
-        r = float(xr.corr(obs, mod, dim=axis))
-        alpha = float(mod.std(dim=axis) / obs.std(dim=axis))
-        beta = float(mod.mean(dim=axis) / obs.mean(dim=axis))
+        r = xr.corr(obs, mod, dim=axis)
+        alpha = mod.std(dim=axis) / obs.std(dim=axis)
+        beta = mod.mean(dim=axis) / obs.mean(dim=axis)
         return 1.0 - ((r - 1.0) ** 2 + (alpha - 1.0) ** 2 + (beta - 1.0) ** 2) ** 0.5
     else:
         from scipy.stats import pearsonr
@@ -1045,7 +1033,14 @@ def pearsonr(obs, mod, axis=None):
         return r
     else:
         if axis is None:
-            return _pearsonr(obs, mod)[0]
+            obs = np.asarray(obs)
+            mod = np.asarray(mod)
+            if np.var(obs) == 0 or np.var(mod) == 0:
+                return 0.0
+            r_val, _ = _pearsonr(obs, mod)
+            if np.isnan(r_val):
+                return 0.0
+            return r_val
         else:
             # Not implemented for axis, fallback to nan
             return np.nan

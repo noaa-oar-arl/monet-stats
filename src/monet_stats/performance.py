@@ -87,7 +87,8 @@ def parallel_compute(func: Callable, data: Union[np.ndarray, xr.DataArray],
                 return np.concatenate(results)
             else:
                 # For scalar results, average or combine as appropriate
-                return np.mean(results)
+                weights = [len(chunk) for chunk in chunks]
+                return np.average(results, weights=weights)
         else:
             return func(data, axis=axis)
 

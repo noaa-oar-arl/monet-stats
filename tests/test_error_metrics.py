@@ -6,11 +6,12 @@ MAE, RMSE, MB, STDO, STDP, and other error statistics.
 """
 import numpy as np
 import pytest
+import xarray as xr
 
 from src.monet_stats.error_metrics import (
     MAE, MAE_m, MB, MNE, MNB, MO, NOP, NP, NRMSE, RM, RMdn, STDO,
     STDP, WDMB, WDMB_m, WDMdnB, MdnB, MdnNB, MdnNE, MdnO, MdnP,
-    NMdnGE, MedAE, MedAE_m, RMSE_m, IOA_m, NSE_alpha, NSE_beta
+    NMdnGE, MedAE, MedAE_m, RMSE, RMSE_m, IOA_m, NSE_alpha, NSE_beta
 )
 from tests.test_utils import TestDataGenerator, validate_metric_output
 
@@ -251,3 +252,42 @@ class TestErrorMetrics:
         """Test Wind Direction Median Bias with perfect agreement."""
         result = WDMdnB(self.obs_perfect, self.mod_perfect)
         assert abs(result - 0.0) < 1e-10, f"Perfect agreement should give WDMdnB=0.0, got {result}"
+
+
+class TestErrorMetricsXarray:
+    """Test suite for error metrics with xarray inputs."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.obs_xr = xr.DataArray([1, 2, 3, 4, 5], dims=["time"])
+        self.mod_xr = xr.DataArray([1.1, 2.1, 3.1, 4.1, 5.1], dims=["time"])
+
+    def test_MAE_xarray(self):
+        """Test MAE with xarray inputs."""
+        result = MAE(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.1)
+
+    def test_RMSE_xarray(self):
+        """Test RMSE with xarray inputs."""
+        result = RMSE(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.1)
+
+    def test_MB_xarray(self):
+        """Test MB with xarray inputs."""
+        result = MB(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, -0.1)
+
+    def test_MNB_xarray(self):
+        """Test MNB with xarray inputs."""
+        result = MNB(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 4.56666667)
+
+    def test_MNE_xarray(self):
+        """Test MNE with xarray inputs."""
+        result = MNE(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 4.56666667)

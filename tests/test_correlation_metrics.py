@@ -6,6 +6,7 @@ Pearson, Spearman, Kendall correlation coefficients and derived metrics.
 """
 import numpy as np
 import pytest
+import xarray as xr
 
 from src.monet_stats.correlation_metrics import (
     R2, RMSE, WDIOA, WDRMSE, IOA, E1, E1_prime, KGE, pearsonr, 
@@ -233,3 +234,36 @@ class TestCorrelationMetrics:
         """Test Concordance Correlation Coefficient."""
         result = CCC(self.obs_perfect, self.mod_perfect)
         assert abs(result - 1.0) < 1e-10, f"Perfect agreement should give CCC=1.0, got {result}"
+
+
+class TestCorrelationMetricsXarray:
+    """Test suite for correlation metrics with xarray inputs."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.obs_xr = xr.DataArray([1, 2, 3, 4, 5], dims=["time"])
+        self.mod_xr = xr.DataArray([1.1, 2.1, 3.1, 4.1, 5.1], dims=["time"])
+
+    def test_R2_xarray(self):
+        """Test R2 with xarray inputs."""
+        result = R2(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.99, atol=0.01)
+
+    def test_RMSE_xarray(self):
+        """Test RMSE with xarray inputs."""
+        result = RMSE(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.1)
+
+    def test_IOA_xarray(self):
+        """Test IOA with xarray inputs."""
+        result = IOA(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.99, atol=0.01)
+
+    def test_KGE_xarray(self):
+        """Test KGE with xarray inputs."""
+        result = KGE(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.9, atol=0.1)

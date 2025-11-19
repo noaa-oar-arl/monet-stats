@@ -57,9 +57,13 @@ def NSE(obs, mod, axis=None):
         denominator = ((obs - obs_mean) ** 2).sum(dim=axis)
         return 1.0 - (numerator / denominator)
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
+        if np.array_equal(obs, mod):
+            return 1.0
         obs_mean = np.mean(obs, axis=axis)
         numerator = np.sum((obs - mod) ** 2, axis=axis)
         denominator = np.sum((obs - obs_mean) ** 2, axis=axis)
+        if denominator == 0:
+            return -np.inf
         return 1.0 - (numerator / denominator)
     else:
         obs_mean = np.ma.mean(obs, axis=axis)

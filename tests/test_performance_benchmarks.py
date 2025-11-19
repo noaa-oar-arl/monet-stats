@@ -266,65 +266,62 @@ class TestXarrayPerformance:
 class TestAlgorithmOptimization:
     """Test different algorithm implementations for performance."""
     
-    def test_vectorized_vs_loop_performance(self, benchmark: BenchmarkFixture):
-        """Compare vectorized vs loop implementations."""
+    def test_vectorized_performance(self, benchmark: BenchmarkFixture):
+        """Benchmark the vectorized MAE implementation."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=10000, correlation=0.8)
-        
+
         def vectorized_mae():
             """Vectorized implementation."""
             return np.mean(np.abs(obs - mod))
-        
+
+        result = benchmark(vectorized_mae)
+        assert result is not None
+
+    def test_loop_performance(self, benchmark: BenchmarkFixture):
+        """Benchmark the loop-based MAE implementation."""
+        data_gen = TestDataGenerator()
+        obs, mod = data_gen.generate_correlated_data(n_samples=10000, correlation=0.8)
+
         def loop_mae():
             """Loop-based implementation."""
             total = 0.0
             for i in range(len(obs)):
                 total += abs(obs[i] - mod[i])
             return total / len(obs)
-        
-        # Benchmark vectorized version
-        vectorized_result = benchmark.pedantic(vectorized_mae, iterations=100, rounds=5)
-        
-        # Benchmark loop version
-        loop_result = benchmark.pedantic(loop_mae, iterations=10, rounds=3)
-        
-        # Vectorized should be faster (this is more of a demonstration)
-        assert vectorized_result is not None
-        assert loop_result is not None
+
+        result = benchmark(loop_mae)
+        assert result is not None
 
 
 class TestMemoryUsage:
     """Test memory usage patterns for different data sizes."""
     
-    def test_memory_scaling_error_metrics(self, benchmark: BenchmarkFixture):
+    @pytest.mark.parametrize("size", [1000, 10000, 100000])
+    def test_memory_scaling_error_metrics(self, benchmark: BenchmarkFixture, size: int):
         """Test memory scaling of error metrics."""
-        sizes = [1000, 10000, 100000]
+        data_gen = TestDataGenerator()
+        obs, mod = data_gen.generate_correlated_data(n_samples=size, correlation=0.8)
         
-        for size in sizes:
-            data_gen = TestDataGenerator()
-            obs, mod = data_gen.generate_correlated_data(n_samples=size, correlation=0.8)
-            
-            def run_with_size():
-                mae = mean_absolute_error(obs, mod)
-                rmse = root_mean_squared_error(obs, mod)
-                return mae, rmse
-            
-            benchmark(run_with_size)
+        def run_with_size():
+            mae = mean_absolute_error(obs, mod)
+            rmse = root_mean_squared_error(obs, mod)
+            return mae, rmse
+
+        benchmark(run_with_size)
     
-    def test_memory_scaling_correlation_metrics(self, benchmark: BenchmarkFixture):
+    @pytest.mark.parametrize("size", [1000, 10000, 100000])
+    def test_memory_scaling_correlation_metrics(self, benchmark: BenchmarkFixture, size: int):
         """Test memory scaling of correlation metrics."""
-        sizes = [1000, 10000, 100000]
+        data_gen = TestDataGenerator()
+        obs, mod = data_gen.generate_correlated_data(n_samples=size, correlation=0.8)
         
-        for size in sizes:
-            data_gen = TestDataGenerator()
-            obs, mod = data_gen.generate_correlated_data(n_samples=size, correlation=0.8)
-            
-            def run_with_size():
-                pearson_r = pearson_correlation(obs, mod)
-                spearman_r = spearman_correlation(obs, mod)
-                return pearson_r, spearman_r
-            
-            benchmark(run_with_size)
+        def run_with_size():
+            pearson_r = pearson_correlation(obs, mod)
+            spearman_r = spearman_correlation(obs, mod)
+            return pearson_r, spearman_r
+
+        benchmark(run_with_size)
 
 
 class TestRealWorldScenarios:

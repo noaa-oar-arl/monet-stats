@@ -85,7 +85,9 @@ class TestSpatialEnsembleMetrics:
         obs = np.array([5.0, 5.0, 5.0])
         result = CRPS(ensemble, obs)
         # Should be a positive value representing the CRPS score
-        assert result >= 0
+        assert isinstance(result, np.ndarray)
+        assert result.shape == (3,)
+        assert np.all(result >= 0)
     
     def test_fss_perfect_agreement(self):
         """Test FSS with perfect agreement."""
@@ -233,8 +235,8 @@ class TestSpatialEnsembleMetrics:
         result_large = CRPS(large_ensemble, obs)
         
         # Both should be positive
-        assert result_small >= 0
-        assert result_large >= 0
+        assert np.all(result_small >= 0)
+        assert np.all(result_large >= 0)
     
     def test_ensemble_mean_vs_numpy_mean(self):
         """Test ensemble_mean against numpy mean."""

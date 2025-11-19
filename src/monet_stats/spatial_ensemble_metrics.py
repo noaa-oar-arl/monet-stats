@@ -64,7 +64,9 @@ def FSS(obs, mod, window=3, threshold=None):
         mod_frac = uniform_filter(mod_bin, window, mode="nearest")
         num = np.nanmean((obs_frac - mod_frac) ** 2)
         denom = np.nanmean(obs_frac**2) + np.nanmean(mod_frac**2)
-    return 1 - num / denom if denom > 0 else np.nan
+    if denom == 0:
+        return 1.0
+    return 1 - num / denom
 
 
 def EDS(obs, mod, threshold):
@@ -139,10 +141,13 @@ def CRPS(ensemble, obs, axis=0):
     n = ens.shape[axis]
     # Compute empirical CDFs
     cdf_ens = np.arange(1, n + 1) / n
+    shape = [1] * ens.ndim
+    shape[axis] = n
+    cdf_ens = np.reshape(cdf_ens, shape)
     # Broadcast obs for comparison
     obs_broadcast = np.expand_dims(obs, axis)
     cdf_obs = (ens_sorted >= obs_broadcast).astype(float)
-    crps = np.mean((cdf_ens - cdf_obs) ** 2, axis=axis)
+    crps = np.sum((cdf_ens - cdf_obs) ** 2, axis=axis)
     return crps
 
 

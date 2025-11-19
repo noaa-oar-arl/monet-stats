@@ -56,12 +56,12 @@ class TestUtilsStats:
         import numpy.ma as ma
         
         a1 = ma.array([1, 2, 3, 4, 5], mask=[0, 1, 0, 1, 0])
-        a2 = ma.array([4, 5, 6, 7, 8], mask=[1, 0, 1, 0])
+        a2 = ma.array([4, 5, 6, 7, 8], mask=[1, 0, 1, 0, 0])
         
         result1, result2 = matchmasks(a1, a2)
         
-        # Combined mask should be [1, 1, 0, 1, 0] (OR of individual masks)
-        expected_mask = [True, True, False, True, False]
+        # Combined mask should be [1, 1, 1, 1, 0] (OR of individual masks)
+        expected_mask = [True, True, True, True, False]
         assert np.array_equal(result1.mask, expected_mask)
         assert np.array_equal(result2.mask, expected_mask)
     
@@ -152,9 +152,9 @@ class TestUtilsStats:
     
     def test_angular_difference_radians(self):
         """Test angular_difference with radians."""
-        result = angular_difference(np.pi/4, -7*np.pi/4, units='radians')
+        result = angular_difference(np.pi/4, 7*np.pi/4, units='radians')
         expected = np.pi/2  # 90 degrees in radians
-        assert abs(result - expected) < 1e-10
+        assert np.isclose(result, expected)
     
     def test_angular_difference_invalid_units(self):
         """Test angular_difference with invalid units."""
@@ -184,12 +184,12 @@ class TestUtilsStats:
         # Test axis=0 (column-wise)
         result_axis0 = rmse(obs_2d, mod_2d, axis=0)
         expected_axis0 = np.array([0.1, 0.1])
-        np.testing.assert_array_equal(result_axis0, expected_axis0)
+        np.testing.assert_allclose(result_axis0, expected_axis0)
         
         # Test axis=1 (row-wise)
         result_axis1 = rmse(obs_2d, mod_2d, axis=1)
         expected_axis1 = np.array([0.1, 0.1])
-        np.testing.assert_array_equal(result_axis1, expected_axis1)
+        np.testing.assert_allclose(result_axis1, expected_axis1)
     
     def test_mae_perfect_agreement(self):
         """Test mae with perfect agreement."""
@@ -212,12 +212,12 @@ class TestUtilsStats:
         # Test axis=0 (column-wise)
         result_axis0 = mae(obs_2d, mod_2d, axis=0)
         expected_axis0 = np.array([0.1, 0.1])
-        np.testing.assert_array_equal(result_axis0, expected_axis0)
+        np.testing.assert_allclose(result_axis0, expected_axis0)
         
         # Test axis=1 (row-wise)
         result_axis1 = mae(obs_2d, mod_2d, axis=1)
         expected_axis1 = np.array([0.1, 0.1])
-        np.testing.assert_array_equal(result_axis1, expected_axis1)
+        np.testing.assert_allclose(result_axis1, expected_axis1)
     
     def test_correlation_perfect_positive(self):
         """Test correlation with perfectly correlated data."""
@@ -262,7 +262,7 @@ class TestUtilsStats:
     
     def test_edge_case_empty_arrays(self):
         """Test behavior with empty arrays."""
-        with pytest.raises(ZeroDivisionError):
+        with pytest.raises(ValueError):
             correlation(np.array([]), np.array([]))
     
     def test_edge_case_single_element(self):
@@ -343,7 +343,7 @@ class TestUtilsStats:
     def test_circlebias_various_cases(self):
         """Test circlebias with various cases."""
         # Test case 1: Normal angles
-        result = circlebias(np.array([45, 135, 25, 315]))
+        result = circlebias(np.array([45, 135, 225, 315]))
         expected = np.array([45, 135, -135, -45])  # All in [-180, 180] range
         np.testing.assert_array_equal(result, expected)
         

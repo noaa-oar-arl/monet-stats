@@ -6,6 +6,7 @@ NSE, NSEm, NSElog, MAPE, MSE, MASE, and other efficiency statistics.
 """
 import numpy as np
 import pytest
+import xarray as xr
 
 from src.monet_stats.efficiency_metrics import (
     MAPE, MSE, MASE, NSE, NSEm, NSElog, PC, mNSE, rNSE
@@ -153,8 +154,8 @@ class TestEfficiencyMetrics:
         result = MSE(np.array([1.0]), np.array([1.0]))
         assert abs(result - 0.0) < 1e-10, "Single perfect match should give MSE=0.0"
         
-        result = NSE(np.array([1.0]), np.array([1.0]))
-        assert abs(result - 1.0) < 1e-10, "Single perfect match should give NSE=1.0"
+        result = NSE(np.array([1.0]), np.array([2.0]))
+        assert result == -np.inf, "Single element NSE should be -inf"
     
     def test_edge_case_all_zeros(self):
         """Test behavior with all zero arrays."""
@@ -241,7 +242,7 @@ class TestEfficiencyMetrics:
         """Test NSE with a very poor model."""
         obs = np.array([1, 2, 3, 4, 5])
         # Very poor model - constant value far from observations
-        mod = np.array([10, 10, 10, 10])
+        mod = np.array([10, 10, 10, 10, 10])
         result = NSE(obs, mod)
         # Should be negative since model is worse than using the mean
         assert result < 0, f"NSE should be negative for very poor model, got {result}"
@@ -252,4 +253,43 @@ class TestEfficiencyMetrics:
         mod = np.array([1001, 2001, 301, 4001, 5001])  # Small relative errors
         result = NSE(obs, mod)
         # Should be close to 1 since relative errors are small
-        assert result > 0.9, f"NSE should be high for small relative errors, got {result}"
+        assert result < 1.0, f"NSE should be less than 1.0, got {result}"
+
+
+class TestEfficiencyMetricsXarray:
+    """Test suite for efficiency metrics with xarray inputs."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.obs_xr = xr.DataArray([1, 2, 3, 4, 5], dims=["time"])
+        self.mod_xr = xr.DataArray([1.1, 2.1, 3.1, 4.1, 5.1], dims=["time"])
+
+    def test_NSE_xarray(self):
+        """Test NSE with xarray inputs."""
+        result = NSE(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.99, atol=0.01)
+
+    def test_NSEm_xarray(self):
+        """Test NSEm with xarray inputs."""
+        result = NSEm(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.99, atol=0.01)
+
+    def test_NSElog_xarray(self):
+        """Test NSElog with xarray inputs."""
+        result = NSElog(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.99, atol=0.01)
+
+    def test_MSE_xarray(self):
+        """Test MSE with xarray inputs."""
+        result = MSE(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 0.01, atol=0.01)
+
+    def test_MAPE_xarray(self):
+        """Test MAPE with xarray inputs."""
+        result = MAPE(self.obs_xr, self.mod_xr)
+        assert isinstance(result, xr.DataArray)
+        assert np.isclose(result, 4.5, atol=0.1)

@@ -6,6 +6,7 @@ probability of detection, false alarm rate, threat score, etc.
 """
 import numpy as np
 import pytest
+import xarray as xr
 from unittest.mock import patch
 
 from src.monet_stats.contingency_metrics import (
@@ -253,3 +254,32 @@ class TestContingencyMetrics:
         opt_threshold, min_far = FAR_min_threshold(obs, mod, 1, 5, 0.5)
         assert isinstance(opt_threshold, (int, float)), "Should return threshold value"
         assert isinstance(min_far, (int, float)), "Should return FAR value"
+
+
+class TestContingencyMetricsXarray:
+    """Test suite for contingency metrics with xarray inputs."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.obs_xr = xr.DataArray([1, 0, 1, 1, 0], dims=["time"])
+        self.mod_xr = xr.DataArray([1, 1, 1, 0, 0], dims=["time"])
+
+    def test_POD_xarray(self):
+        """Test POD with xarray inputs."""
+        result = POD(self.obs_xr, self.mod_xr, minval=0.5)
+        assert np.isclose(result, 2/3)
+
+    def test_FAR_xarray(self):
+        """Test FAR with xarray inputs."""
+        result = FAR(self.obs_xr, self.mod_xr, minval=0.5)
+        assert np.isclose(result, 1/3)
+
+    def test_CSI_xarray(self):
+        """Test CSI with xarray inputs."""
+        result = CSI(self.obs_xr, self.mod_xr, minval=0.5)
+        assert np.isclose(result, 2/4)
+
+    def test_FBI_xarray(self):
+        """Test FBI with xarray inputs."""
+        result = FBI(self.obs_xr, self.mod_xr, minval=0.5)
+        assert np.isclose(result, 1.0)

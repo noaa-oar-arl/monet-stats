@@ -81,7 +81,7 @@ def MNB(obs, mod, axis=None):
         Mean normalized bias (percent).
     """
     if hasattr(obs, "dims") and hasattr(mod, "dims"):
-        obs, mod = obs.align(mod, join="inner")
+        obs, mod = xr.align(obs, mod, join="inner")
         return ((mod - obs) / obs).mean(dim=obs.dims[axis] if axis is not None else None) * 100.0
     else:
         return np.ma.masked_invalid((mod - obs) / obs).mean(axis=axis) * 100.0
@@ -106,7 +106,7 @@ def MNE(obs, mod, axis=None):
         Mean normalized gross error (percent).
     """
     if hasattr(obs, "dims") and hasattr(mod, "dims"):
-        obs, mod = obs.align(mod, join="inner")
+        obs, mod = xr.align(obs, mod, join="inner")
         return (abs(mod - obs) / obs).mean(dim=obs.dims[axis] if axis is not None else None) * 100.0
     else:
         return np.ma.masked_invalid(np.ma.abs(mod - obs) / obs).mean(axis=axis) * 100.0
@@ -752,6 +752,8 @@ def MAE(obs, mod, axis=None):
         obs, mod = xr.align(obs, mod, join="inner")
         return abs(mod - obs).mean(dim=axis)
     else:
+        obs = np.asarray(obs)
+        mod = np.asarray(mod)
         return np.ma.abs(mod - obs).mean(axis=axis)
 
 
@@ -1528,6 +1530,8 @@ def RMSE(obs, mod, axis=None):
         obs, mod = xr.align(obs, mod, join="inner")
         return ((mod - obs) ** 2).mean(dim=axis) ** 0.5
     else:
+        obs = np.asarray(obs)
+        mod = np.asarray(mod)
         return np.sqrt(np.mean((mod - obs) ** 2, axis=axis))
 
 

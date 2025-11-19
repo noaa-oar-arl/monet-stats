@@ -110,10 +110,8 @@ def circlebias_m(b):
     >>> stats.circlebias_m(np.array([190, -190, 10, -10]))
     array([-170, 170,  10, -10])
     """
-    b = np.asarray(b)
+    b = np.ma.masked_invalid(b)
     out = (b + 180) % 360 - 180
-    if np.ma.isMaskedArray(b):
-        out = np.ma.array(out, mask=np.ma.getmaskarray(b))
     return out
 
 
@@ -281,6 +279,9 @@ def correlation(x, y, axis=None):
     x = np.asarray(x)
     y = np.asarray(y)
     
+    if x.size == 0 or y.size == 0:
+        raise ValueError("Input arrays cannot be empty")
+
     if axis is None:
         # Flatten arrays for 1D correlation
         x = x.flatten()

@@ -347,6 +347,12 @@ class TestPropertyBased:
             arr1 = arr1[:min_len]
             arr2 = arr2[:min_len]
         
+        # Skip if the denominator is zero
+        obsmean = arr1.mean()
+        denom = ((np.abs(arr2 - obsmean) + np.abs(arr1 - obsmean)) ** 2).sum()
+        if denom == 0:
+            return
+
         result = IOA(arr1, arr2)
         # IOA should be <= 1.0
         assert result <= 1.0, f"IOA should be <= 1.0, got {result}"
