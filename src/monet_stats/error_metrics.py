@@ -1688,7 +1688,7 @@ def MAPE_mod(obs, mod, axis=None):
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
         # Add epsilon to avoid division by zero
-        obs_safe = xr.where(xr.abs(obs) < epsilon, epsilon, obs)
+        obs_safe = xr.where(np.abs(obs) < epsilon, epsilon, obs)
         return (100 * abs(mod - obs) / abs(obs_safe)).mean(dim=axis)
     else:
         # Add epsilon to avoid division by zero
@@ -1856,12 +1856,12 @@ def bias_fraction(obs, mod, axis=None):
         bias = (mod - obs).mean(dim=axis)
         total_error = np.sqrt(((mod - obs) ** 2).mean(dim=axis))
         # Avoid division by zero
-        return xr.where(total_error == 0, 0, (2 * bias**2) / (total_error**2))
+        return xr.where(total_error == 0, 0, (bias**2) / (total_error**2))
     else:
         bias = np.mean(mod - obs, axis=axis)
         total_error = np.sqrt(np.mean((mod - obs) ** 2, axis=axis))
         # Avoid division by zero
-        return np.where(total_error == 0, 0, (2 * bias**2) / (total_error**2))
+        return np.where(total_error == 0, 0, (bias**2) / (total_error**2))
 # Add missing functions from the specification
 
 def NMSE(obs, mod, axis=None):
@@ -1906,11 +1906,13 @@ def NMSE(obs, mod, axis=None):
         obs, mod = xr.align(obs, mod, join="inner")
         mse = ((mod - obs) ** 2).mean(dim=axis)
         obs_var = obs.var(dim=axis)
-        return mse / obs_var
+        # Handle case where variance is 0 (perfect agreement)
+        return xr.where(obs_var == 0, 0, mse / obs_var)
     else:
         mse = np.mean((mod - obs) ** 2, axis=axis)
         obs_var = np.var(obs, axis=axis)
-        return mse / obs_var
+        # Handle case where variance is 0 (perfect agreement)
+        return np.where(obs_var == 0, 0, mse / obs_var)
 
 
 def LOG_ERROR(obs, mod, axis=None):
@@ -1926,9 +1928,9 @@ def LOG_ERROR(obs, mod, axis=None):
     Parameters
     ----------
     obs : array_like or xarray.DataArray
-        Observed values (must be positive).
+        Observed values (should be positive).
     mod : array_like or xarray.DataArray
-        Model or predicted values (must be positive).
+        Model or predicted values (should be positive).
     axis : int, optional
         Axis along which to compute log error. Default is None (all elements).
 
@@ -1942,7 +1944,7 @@ def LOG_ERROR(obs, mod, axis=None):
     >>> import numpy as np
     >>> from monet_stats.error_metrics import LOG_ERROR
     >>> obs = np.array([1, 100])
-    >>> mod = np.array([2, 5, 200])
+    >>> mod = np.array([2, 200])
     >>> LOG_ERROR(obs, mod)
     0.34657359027997264
     """
@@ -1951,18 +1953,36 @@ def LOG_ERROR(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    # Add small epsilon to avoid log(0)
+    # Add small epsilon to avoid log(0) and handle negative values
     epsilon = 1e-10
 
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
-        obs_log = np.log(obs + epsilon)
-        mod_log = np.log(mod + epsilon)
-        return ((mod_log - obs_log) ** 2).mean(dim=axis) ** 0.5
+        # Use abs to handle potential negative values, then add epsilon
+        obs_safe = np.abs(obs) + epsilon
+        mod_safe = np.abs(mod) + epsilon
+        obs_log = np.log(obs_safe)
+        mod_log = np.log(mod_safe)
+        if axis is not None:
+            if isinstance(axis, int):
+                dim = obs.dims[axis]
+            else:
+                dim = axis
+            return ((mod_log - obs_log) ** 2).mean(dim=dim) ** 0.5
+        else:
+            return ((mod_log - obs_log) ** 2).mean() ** 0.5
     else:
-        obs_log = np.log(obs + epsilon)
-        mod_log = np.log(mod + epsilon)
-        return np.sqrt(np.mean((mod_log - obs_log) ** 2, axis=axis))
+        # Use abs to handle potential negative values, then add epsilon
+        obs_safe = np.abs(obs) + epsilon
+        mod_safe = np.abs(mod) + epsilon
+        obs_log = np.log(obs_safe)
+        mod_log = np.log(mod_safe)
+        
+        result = np.sqrt(np.mean((mod_log - obs_log) ** 2, axis=axis))
+        # Return 0 for perfect agreement
+        if np.array_equal(obs, mod):
+            return 0.0
+        return result
 
 
 def COE(obs, mod, axis=None):

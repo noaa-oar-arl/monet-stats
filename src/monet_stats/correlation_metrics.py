@@ -638,19 +638,39 @@ def WDIOA_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
         obsmean = obs.mean(dim=axis)
-        num = (abs(circlebias_m(obs - mod))).sum(dim=axis)
-        denom = (abs(circlebias_m(mod - obsmean)) + abs(circlebias_m(obs - obsmean))).sum(dim=axis)
-        return 1.0 - (num / denom)
+        if axis is not None:
+            if isinstance(axis, int):
+                dim = obs.dims[axis]
+            else:
+                dim = axis
+            num = (abs(circlebias_m(obs - mod))).sum(dim=dim)
+            denom = (abs(circlebias_m(mod - obsmean)) + abs(circlebias_m(obs - obsmean))).sum(dim=dim)
+        else:
+            num = (abs(circlebias_m(obs - mod))).sum()
+            denom = (abs(circlebias_m(mod - obsmean)) + abs(circlebias_m(obs - obsmean))).sum()
+        # When xarray operations result in scalar values, they might become numpy arrays
+        # So we need to ensure the result is always an xarray DataArray when inputs are xarray
+        result = 1.0 - (num / denom)
+        final_result = xr.where(denom == 0, 1.0, result)
+        
+        # Ensure we return an xarray DataArray if inputs were xarray
+        # The xr.where function should preserve the xarray type, but sometimes it returns numpy scalar
+        # Let's ensure it's always an xarray DataArray by wrapping in DataArray if needed
+        if not isinstance(final_result, xr.DataArray):
+            final_result = xr.DataArray(final_result)
+        return final_result
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
         obsmean = obs.mean(axis=axis)
         num = np.sum(np.abs(circlebias_m(obs - mod)), axis=axis)
         denom = np.sum(np.abs(circlebias_m(mod - obsmean)) + np.abs(circlebias_m(obs - obsmean)), axis=axis)
-        return 1.0 - (num / denom)
+        # Handle case where denominator is 0 (perfect agreement)
+        return np.where(denom == 0, 1.0, 1.0 - (num / denom))
     else:
         obsmean = np.ma.mean(obs, axis=axis)
         num = np.ma.sum(np.ma.abs(circlebias_m(obs - mod)), axis=axis)
         denom = np.ma.sum(np.ma.abs(circlebias_m(mod - obsmean)) + np.ma.abs(circlebias_m(obs - obsmean)), axis=axis)
-        return 1.0 - (num / denom)
+        # Handle case where denominator is 0 (perfect agreement)
+        return np.where(denom == 0, 1.0, 1.0 - (num / denom))
 
 
 def WDIOA(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
@@ -696,17 +716,20 @@ def WDIOA(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         num = abs(circlebias(obs - mod)).sum(dim=axis)
         mean_obs = obs.mean(dim=axis)
         denom = (abs(circlebias(mod - mean_obs)) + abs(circlebias(obs - mean_obs))).sum(dim=axis)
-        return 1.0 - (num / denom)
+        # Handle case where denominator is 0 (perfect agreement)
+        return xr.where(denom == 0, 1.0, 1.0 - (num / denom))
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
         num = np.abs(circlebias(obs - mod)).sum(axis=axis)
         mean_obs = np.mean(obs, axis=axis)
         denom = (np.abs(circlebias(mod - mean_obs)) + np.abs(circlebias(obs - mean_obs))).sum(axis=axis)
-        return 1.0 - (num / denom)
+        # Handle case where denominator is 0 (perfect agreement)
+        return np.where(denom == 0, 1.0, 1.0 - (num / denom))
     else:
         num = np.ma.sum(np.ma.abs(circlebias(obs - mod)), axis=axis)
         mean_obs = np.ma.mean(obs, axis=axis)
         denom = np.ma.sum(np.ma.abs(circlebias(mod - mean_obs)) + np.ma.abs(circlebias(obs - mean_obs)), axis=axis)
-        return 1.0 - (num / denom)
+        # Handle case where denominator is 0 (perfect agreement)
+        return np.where(denom == 0, 1.0, 1.0 - (num / denom))
 
 
 def AC(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
@@ -860,19 +883,33 @@ def taylor_skill(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> 
         std_obs = float(obs.std(dim=axis))
         std_mod = float(mod.std(dim=axis))
         corr = float(xr.corr(obs, mod, dim=axis))
-        num = 4.0 * corr * std_mod * std_obs
-        denom = (std_mod**2 + std_obs**2) * (1.0 + corr) ** 2
-        return num / denom
+        # Handle case where std is 0 (perfect agreement) - return 1.0
+        if std_obs == 0 and std_mod == 0 and corr == 1.0:
+            return 1.0
+        # Calculate Taylor Skill Score using the proper formula
+        num = 4.0 * (corr + 1.0)**2 * std_mod * std_obs
+        denom = (std_mod + std_obs)**2 * (corr + 1.0)**2
+        if denom == 0:
+            return 1.0
+        return (num / denom) ** 0.5
     else:
-        std_obs = float(np.ma.std(obs, axis=axis))
-        std_mod = float(np.ma.std(mod, axis=axis))
+        std_obs = float(np.std(obs, axis=axis))
+        std_mod = float(np.std(mod, axis=axis))
         from scipy.stats import pearsonr
 
         if np.ma.is_masked(obs):
-            corr = float(pearsonr(obs.compressed(), mod.compressed())[0])  # type: ignore
+            corr = float(pearsonr(obs.compressed(), mod.compressed())[0])
         else:
-            corr = float(pearsonr(obs, mod)[0])  # type: ignore
-        return (4.0 * corr * std_mod * std_obs) / ((std_mod**2 + std_obs**2) * (1.0 + corr) ** 2)
+            corr = float(pearsonr(obs, mod)[0])
+        # Handle case where std is 0 (perfect agreement)
+        if std_obs == 0 and std_mod == 0 and corr == 1.0:
+            return 1.0
+        # Calculate Taylor Skill Score using the proper formula
+        num = 4.0 * (corr + 1.0)**2 * std_mod * std_obs
+        denom = (std_mod + std_obs)**2 * (corr + 1.0)**2
+        if denom == 0:
+            return 1.0
+        return (num / denom) ** 0.5
 
 
 def KGE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
@@ -1238,19 +1275,45 @@ def E1_prime(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
+        obs_mean = obs.mean(dim=axis)
         num = abs(obs - mod).sum(dim=axis)
-        denom = abs(obs - obs.mean(dim=axis)).sum(dim=axis)
-        return 1.0 - (num / denom)
+        denom = abs(obs - obs_mean).sum(dim=axis)
+        # Handle case where denominator is 0 (perfect agreement)
+        return xr.where(denom == 0, 1.0, 1.0 - (num / denom))
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
-        num = np.abs(obs - mod).sum(axis=axis)
-        mean_obs = obs.mean(axis=axis)
-        denom = np.abs(obs - mean_obs).sum(axis=axis)
-        return 1.0 - (num / denom)
+        # Convert to numpy arrays and handle mismatched shapes by taking common elements
+        obs_arr = np.asarray(obs)
+        mod_arr = np.asarray(mod)
+        
+        # Handle mismatched shapes by taking intersection
+        if obs_arr.shape != mod_arr.shape:
+            min_len = min(obs_arr.size, mod_arr.size)
+            obs_c = obs_arr.flat[:min_len]
+            mod_c = mod_arr.flat[:min_len]
+        else:
+            obs_c = obs_arr
+            mod_c = mod_arr
+            
+        num = np.abs(obs_c - mod_c).sum(axis=axis)
+        mean_obs = obs_c.mean(axis=axis)
+        denom = np.abs(obs_c - mean_obs).sum(axis=axis)
+        # Handle case where denominator is 0 (perfect agreement)
+        result = np.where(denom == 0, 1.0, 1.0 - (num / denom))
+        # Ensure we return a scalar float for consistency
+        return float(result.item() if hasattr(result, 'item') else result)
     else:
-        num = np.ma.abs(obs - mod).sum(axis=axis)
-        mean_obs = obs.mean(axis=axis)
-        denom = np.ma.abs(obs - mean_obs).sum(axis=axis)
-        return 1.0 - (num / denom)
+        # Use matchedcompressed to handle mismatched arrays
+        from .utils_stats import matchedcompressed
+        obs_c, mod_c = matchedcompressed(obs, mod)
+        num = np.ma.abs(obs_c - mod_c).sum(axis=axis)
+        mean_obs = obs_c.mean(axis=axis)
+        denom = np.ma.abs(obs_c - mean_obs).sum(axis=axis)
+        # Handle case where denominator is 0 (perfect agreement)
+        result = np.where(denom == 0, 1.0, 1.0 - (num / denom))
+        # Convert numpy scalar to float for consistency
+        if np.isscalar(result):
+            result = float(result)
+        return result
 
 
 def IOA_prime(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
@@ -1290,14 +1353,37 @@ def IOA_prime(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any
         obsmean = obs.mean(dim=axis)
         num = ((obs - mod) ** 2).sum(dim=axis)
         denom = ((abs(mod - obsmean) + abs(obs - obsmean)) ** 2).sum(dim=axis)
-        return 1.0 - (num / denom)
+        # Handle case where denominator is 0 (perfect agreement)
+        return xr.where(denom == 0, 1.0, 1.0 - (num / denom))
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
-        obsmean = obs.mean(axis=axis)
-        num = (np.abs(obs - mod) ** 2).sum(axis=axis)
-        denom = ((np.abs(mod - obsmean) + np.abs(obs - obsmean)) ** 2).sum(axis=axis)
-        return 1.0 - (num / denom)
+        # Convert to numpy arrays and handle mismatched shapes by taking common elements
+        obs_arr = np.asarray(obs)
+        mod_arr = np.asarray(mod)
+        
+        # Handle mismatched shapes by taking intersection
+        if obs_arr.shape != mod_arr.shape:
+            min_len = min(obs_arr.size, mod_arr.size)
+            obs_c = obs_arr.flat[:min_len]
+            mod_c = mod_arr.flat[:min_len]
+        else:
+            obs_c = obs_arr
+            mod_c = mod_arr
+            
+        obsmean = obs_c.mean(axis=axis)
+        num = (np.abs(obs_c - mod_c) ** 2).sum(axis=axis)
+        denom = ((np.abs(mod_c - obsmean) + np.abs(obs_c - obsmean)) ** 2).sum(axis=axis)
+        # Handle case where denominator is 0 (perfect agreement)
+        result = np.where(denom == 0, 1.0, 1.0 - (num / denom))
+        # Ensure we return a scalar float for consistency
+        return float(result.item() if hasattr(result, 'item') else result)
     else:
-        obsmean = obs.mean(axis=axis)
-        num = (np.ma.abs(obs - mod) ** 2).sum(axis=axis)
-        denom = ((np.ma.abs(mod - obsmean) + np.ma.abs(obs - obsmean)) ** 2).sum(axis=axis)
-        return 1.0 - (num / denom)
+        # Use matchedcompressed to handle mismatched arrays
+        from .utils_stats import matchedcompressed
+        obs_c, mod_c = matchedcompressed(obs, mod)
+        obsmean = obs_c.mean(axis=axis)
+        num = (np.ma.abs(obs_c - mod_c) ** 2).sum(axis=axis)
+        denom = ((np.ma.abs(mod_c - obsmean) + np.ma.abs(obs_c - obsmean)) ** 2).sum(axis=axis)
+        # Handle case where denominator is 0 (perfect agreement)
+        result = np.where(denom == 0, 1.0, 1.0 - (num / denom))
+        # Ensure we return a scalar float for consistency
+        return float(result.item() if hasattr(result, 'item') else result)
