@@ -7,16 +7,16 @@ on:
     branches: [main, develop]
 
 jobs:
-  pre-commit:
+  lint:
+    name: pre-commit
     runs-on: ubuntu-latest
+    if: github.repository == 'noaa-oar-arl/monet'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - uses: pre-commit/action@v3.1.0
-        with:
-          extra_args: --all-files
+          python-version: "3.9"
+      - uses: pre-commit/action@v3.0.1
 
   test:
     needs: pre-commit
