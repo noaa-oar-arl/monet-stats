@@ -64,7 +64,9 @@ def FSS(obs, mod, window=3, threshold=None):
         mod_frac = uniform_filter(mod_bin, window, mode="nearest")
         num = np.nanmean((obs_frac - mod_frac) ** 2)
         denom = np.nanmean(obs_frac**2) + np.nanmean(mod_frac**2)
-    return 1 - num / denom if denom > 0 else np.nan
+    if denom == 0:
+        return 1.0
+    return 1 - num / denom
 
 
 def EDS(obs, mod, threshold):
@@ -139,10 +141,13 @@ def CRPS(ensemble, obs, axis=0):
     n = ens.shape[axis]
     # Compute empirical CDFs
     cdf_ens = np.arange(1, n + 1) / n
+    shape = [1] * ens.ndim
+    shape[axis] = n
+    cdf_ens = np.reshape(cdf_ens, shape)
     # Broadcast obs for comparison
     obs_broadcast = np.expand_dims(obs, axis)
     cdf_obs = (ens_sorted >= obs_broadcast).astype(float)
-    crps = np.mean((cdf_ens - cdf_obs) ** 2, axis=axis)
+    crps = np.sum((cdf_ens - cdf_obs) ** 2, axis=axis)
     return crps
 
 
@@ -222,20 +227,20 @@ def BSS(obs, mod, threshold):
     """
     obs = np.asarray(obs)
     mod = np.asarray(mod)
-    
+
     # Convert forecast probabilities to binary based on threshold
     mod_binary = (mod >= threshold).astype(float)
-    
+
     # Calculate Brier Score
     bs = np.mean((mod_binary - obs) ** 2)
-    
+
     # Calculate reference Brier Score (climatology)
     obs_clim = np.mean(obs)
     bs_ref = np.mean((obs_clim - obs) ** 2)
-    
+
     # Calculate Brier Skill Score
     bss = 1 - (bs / bs_ref) if bs_ref != 0 else 0
-    
+
     return bss
 
 
@@ -297,7 +302,7 @@ def SAL(obs, mod, threshold=None):
 
     # Structure
     def structure(X):
-        result = ndi.label(X >= threshold)
+        result = ndi.label(threshold <= X)
         if isinstance(result, tuple):
             labeled, n = result
         else:
@@ -320,7 +325,7 @@ def SAL(obs, mod, threshold=None):
 
     # Location
     def centroid(X):
-        result = ndi.label(X >= threshold)
+        result = ndi.label(threshold <= X)
         if isinstance(result, tuple):
             labeled, n = result
         else:
@@ -339,7 +344,7 @@ def SAL(obs, mod, threshold=None):
 
     # Spread of objects
     def spread(X):
-        result = ndi.label(X >= threshold)
+        result = ndi.label(threshold <= X)
         if isinstance(result, tuple):
             labeled, n = result
         else:
@@ -439,20 +444,20 @@ def rank_histogram(ensemble, obs):
     """
     ens = np.asarray(ensemble)
     obs = np.asarray(obs)
-    
+
     # Add observed values to ensemble for ranking
     full_ensemble = np.concatenate([ens, obs[np.newaxis, ...]], axis=0)
-    
+
     # Sort along ensemble axis
     sorted_ens = np.argsort(full_ensemble, axis=0)
-    
+
     # Find rank of observation (which was appended as the last element)
     ranks = np.where(sorted_ens == len(ens), 1, 0)
-    
+
     # Sum along spatial dimensions to get histogram
     if ranks.ndim > 1:
         rank_hist = np.sum(ranks, axis=tuple(range(1, ranks.ndim)))
     else:
         rank_hist = ranks
-    
+
     return rank_hist

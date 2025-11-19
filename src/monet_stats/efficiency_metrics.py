@@ -49,7 +49,7 @@ def NSE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    
+
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
         obs_mean = obs.mean(dim=axis)
@@ -57,9 +57,13 @@ def NSE(obs, mod, axis=None):
         denominator = ((obs - obs_mean) ** 2).sum(dim=axis)
         return 1.0 - (numerator / denominator)
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
+        if np.array_equal(obs, mod):
+            return 1.0
         obs_mean = np.mean(obs, axis=axis)
         numerator = np.sum((obs - mod) ** 2, axis=axis)
         denominator = np.sum((obs - obs_mean) ** 2, axis=axis)
+        if denominator == 0:
+            return -np.inf
         return 1.0 - (numerator / denominator)
     else:
         obs_mean = np.ma.mean(obs, axis=axis)
@@ -112,7 +116,7 @@ def NSEm(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    
+
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
         obs_mean = obs.mean(dim=axis)
@@ -170,10 +174,10 @@ def NSElog(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    
+
     # Add small constant to avoid log(0)
     epsilon = 1e-6
-    
+
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
         obs_log = np.log(obs + epsilon)
@@ -240,7 +244,7 @@ def rNSE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    
+
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
         obs_mean = obs.mean(dim=axis)
@@ -300,7 +304,7 @@ def mNSE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    
+
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
         if axis is not None:
@@ -356,7 +360,7 @@ def PC(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    
+
     # Default tolerance: 10% of observed value
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
@@ -544,7 +548,7 @@ def MASE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    
+
     if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
         # Calculate naive forecast error (using previous observation)
