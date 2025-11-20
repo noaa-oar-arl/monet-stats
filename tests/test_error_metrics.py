@@ -11,7 +11,7 @@ import xarray as xr
 from hypothesis import given
 from hypothesis import strategies as st
 
-from src.monet_stats.error_metrics import (
+from monet_stats.error_metrics import (
     COE,
     CORR_INDEX,
     LOG_ERROR,
@@ -51,7 +51,7 @@ from src.monet_stats.error_metrics import (
     WDMdnB,
     bias_fraction,
 )
-from tests.test_utils import TestDataGenerator
+from monet_stats.test_utils import TestDataGenerator
 
 
 class TestErrorMetrics:

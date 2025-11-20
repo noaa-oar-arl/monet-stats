@@ -9,22 +9,22 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from src.monet_stats.contingency_metrics import CSI  # Critical Success Index
-from src.monet_stats.contingency_metrics import ETS  # Equitable Threat Score
-from src.monet_stats.contingency_metrics import FAR  # False Alarm Rate
-from src.monet_stats.contingency_metrics import FBI  # Frequency Bias Index
-from src.monet_stats.contingency_metrics import HSS  # Heidke Skill Score
-from src.monet_stats.contingency_metrics import POD  # Probability of Detection
-from src.monet_stats.contingency_metrics import TSS  # True Skill Statistic
-from src.monet_stats.contingency_metrics import BSS_binary  # Binary Brier Skill Score
-from src.monet_stats.contingency_metrics import scores  # Contingency table function
-from src.monet_stats.contingency_metrics import (
+from monet_stats.contingency_metrics import CSI  # Critical Success Index
+from monet_stats.contingency_metrics import ETS  # Equitable Threat Score
+from monet_stats.contingency_metrics import FAR  # False Alarm Rate
+from monet_stats.contingency_metrics import FBI  # Frequency Bias Index
+from monet_stats.contingency_metrics import HSS  # Heidke Skill Score
+from monet_stats.contingency_metrics import POD  # Probability of Detection
+from monet_stats.contingency_metrics import TSS  # True Skill Statistic
+from monet_stats.contingency_metrics import BSS_binary  # Binary Brier Skill Score
+from monet_stats.contingency_metrics import scores  # Contingency table function
+from monet_stats.contingency_metrics import (
     ETS_max_threshold,
     FAR_min_threshold,
     HSS_max_threshold,
     POD_max_threshold,
 )
-from tests.test_utils import TestDataGenerator
+from monet_stats.test_utils import TestDataGenerator
 
 
 class TestContingencyMetrics:

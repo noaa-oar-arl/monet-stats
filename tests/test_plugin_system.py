@@ -4,7 +4,7 @@ Tests for plugin_system.py module.
 
 import numpy as np
 
-from src.monet_stats.plugin_system import CustomMetric, PluginManager
+from monet_stats.plugin_system import CustomMetric, PluginManager
 
 
 class TestPluginSystem:

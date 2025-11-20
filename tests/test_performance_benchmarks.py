@@ -28,7 +28,7 @@ from monet_stats.test_aliases import (
     root_mean_squared_error,
     spearman_correlation,
 )
-from tests.test_utils import TestDataGenerator
+from monet_stats.test_utils import TestDataGenerator
 
 
 class TestPerformanceBenchmarks:

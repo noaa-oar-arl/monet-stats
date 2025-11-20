@@ -23,7 +23,7 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
 # Import all efficiency metrics functions
-from src.monet_stats.efficiency_metrics import (
+from monet_stats.efficiency_metrics import (
     MAE,
     MAPE,
     MASE,

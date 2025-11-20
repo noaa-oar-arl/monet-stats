@@ -4,7 +4,7 @@ Tests for interfaces.py module.
 
 import numpy as np
 
-from src.monet_stats.interfaces import (
+from monet_stats.interfaces import (
     BaseStatisticalMetric,
     DataProcessor,
     PerformanceOptimizer,

@@ -11,7 +11,7 @@ import xarray as xr
 from hypothesis import given
 from hypothesis import strategies as st
 
-from src.monet_stats.correlation_metrics import (
+from monet_stats.correlation_metrics import (
     AC,
     CCC,
     E1,
@@ -34,7 +34,7 @@ from src.monet_stats.correlation_metrics import (
     spearmanr,
     taylor_skill,
 )
-from tests.test_utils import TestDataGenerator
+from monet_stats.test_utils import TestDataGenerator
 
 
 class TestCorrelationMetrics:

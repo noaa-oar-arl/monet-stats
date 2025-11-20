@@ -19,7 +19,7 @@ from monet_stats.test_aliases import (
     pearson_correlation,
     root_mean_squared_error,
 )
-from tests.test_utils import TestDataGenerator
+from monet_stats.test_utils import TestDataGenerator
 
 
 class TestModuleInteractions:

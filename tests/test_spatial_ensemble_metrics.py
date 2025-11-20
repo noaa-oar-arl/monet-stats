@@ -25,7 +25,7 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
 # Import all spatial ensemble metrics functions
-from src.monet_stats.spatial_ensemble_metrics import (
+from monet_stats.spatial_ensemble_metrics import (
     BSS,
     CRPS,
     EDS,

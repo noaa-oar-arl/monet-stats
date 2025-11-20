@@ -27,7 +27,7 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
 # Import all relative metrics functions
-from src.monet_stats.relative_metrics import (
+from monet_stats.relative_metrics import (
     FB,
     FE,
     ME,
@@ -54,7 +54,7 @@ from src.monet_stats.relative_metrics import (
     WDME_m,
     WDNMB_m,
 )
-from src.monet_stats.utils_stats import circlebias, circlebias_m
+from monet_stats.utils_stats import circlebias, circlebias_m
 
 
 class TestRelativeMetrics:
