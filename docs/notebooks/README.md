@@ -18,7 +18,11 @@ This directory contains comprehensive Jupyter notebooks demonstrating the usage 
 - **Data**: Temperature, precipitation, and wind datasets
 - **Level**: Intermediate
 
+<<<<<<< HEAD:docs/notebooks/README.md
 ### 3. Spatial Analysis and Downscaling ([`03_spatial_analysis_downscaling_fixed.ipynb`](03_spatial_analysis_downscaling_fixed.ipynb))
+=======
+### 3. Spatial Analysis and Downscaling ([`03_spatial_analysis_downscaling.ipynb`](03_spatial_analysis_downscaling.ipynb))
+>>>>>>> main:notebooks/README.md
 
 - **Focus**: Spatial verification and downscaling workflows
 - **Topics**: Spatial correlation, pattern verification, grid-scale analysis

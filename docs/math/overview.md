@@ -270,7 +270,11 @@ $$
 \text{NSElog} = 1 - \frac{\sum_{i=1}^{N} (\ln(O_i + \epsilon) - \ln(M_i + \epsilon))^2}{\sum_{i=1}^{N} (\ln(O_i + \epsilon) - \overline{\ln(O + \epsilon)})^2}
 $$
 
-NSElog applies the NSE calculation to log-transformed values, useful for variables with skewed distributions.
+Where:
+
+- $r$: Pearson correlation coefficient
+- $\alpha = \sigma_M / \sigma_O$: Ratio of standard deviations
+- $\beta = \bar{M} / \bar{O}$: Ratio of means
 
 ### Modified Nash-Sutcliffe Efficiency (mNSE)
 
