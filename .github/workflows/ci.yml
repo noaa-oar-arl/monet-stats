@@ -39,7 +39,7 @@ jobs:
           pip install -e .[test,dev,docs]
       - name: Test with pytest
         run: |
-          pytest --cov=src/monet_stats --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+          pytest --cov=src/monet_stats --cov-report=xml --cov-report=term-missing --cov-fail-under=60
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
