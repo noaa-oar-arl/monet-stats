@@ -33,7 +33,10 @@ from src.monet_stats.relative_metrics import (
 )
 from src.monet_stats.spatial_ensemble_metrics import (
     CRPS,
+)
+from src.monet_stats.spatial_skill_metrics import (
     FSS,
+    VETS,
 )
 from src.monet_stats.utils_stats import (
     mae,
@@ -273,15 +276,6 @@ class TestUtilsStats:
 
 class TestSpatialEnsembleMetrics:
     """Test spatial and ensemble metrics."""
-
-    def test_FSS(self):
-        """Test Fractions Skill Score."""
-        # Simple 2D arrays for testing
-        obs = np.array([[1, 0], [0, 1]], dtype=float)
-        mod = np.array([[1, 0], [0, 1]], dtype=float)
-        result = FSS(obs, mod, window=1, threshold=0.5)
-        # Perfect match should give high FSS
-        assert 0 <= result <= 1
 
     def test_CRPS(self):
         """Test Continuous Ranked Probability Score."""

@@ -80,12 +80,15 @@ from .spatial_ensemble_metrics import (
     BSS,
     CRPS,
     EDS,
-    FSS,
     SAL,
     ensemble_mean,
     ensemble_std,
     rank_histogram,
     spread_error,
+)
+from .spatial_skill_metrics import (
+    FSS,
+    VETS,
 )
 from .utils_stats import (
     angular_difference,
@@ -175,7 +178,6 @@ __all__ = [
     "FE",
     "MPE",
     # spatial_ensemble_metrics
-    "FSS",
     "EDS",
     "CRPS",
     "spread_error",
@@ -184,6 +186,9 @@ __all__ = [
     "ensemble_mean",
     "ensemble_std",
     "rank_histogram",
+    # spatial_skill_metrics
+    "FSS",
+    "VETS",
     # utils_stats
     "matchedcompressed",
     "matchmasks",
