@@ -59,20 +59,8 @@ from .error_metrics import (
     WDMdnB,
 )
 from .relative_metrics import FB, FE, MPE, NMB, NMB_ABS, NMdnB
-from .spatial_ensemble_metrics import (
-    BSS,
-    CRPS,
-    EDS,
-    SAL,
-    ensemble_mean,
-    ensemble_std,
-    rank_histogram,
-    spread_error,
-)
-from .spatial_skill_metrics import (
-    FSS,
-    VETS,
-)
+from .spatial_ensemble_metrics import BSS, CRPS, EDS, SAL, ensemble_mean, ensemble_std, rank_histogram, spread_error
+from .spatial_skill_metrics import FSS, VETS
 from .utils_stats import (
     angular_difference,
     circlebias,

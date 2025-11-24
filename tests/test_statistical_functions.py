@@ -12,7 +12,7 @@ from monet_stats.correlation_metrics import pearsonr as stats_pearsonr
 from monet_stats.efficiency_metrics import NSE as eff_NSE
 from monet_stats.error_metrics import LOG_ERROR, MAE, MAPE, MASE, MB, NMSE, NRMSE, RMSE, MedAE, sMAPE
 from monet_stats.relative_metrics import NMB
-from monet_stats.spatial_ensemble_metrics import CRPS, FSS
+from monet_stats.spatial_ensemble_metrics import CRPS
 from monet_stats.utils_stats import mae, rmse
 
 
