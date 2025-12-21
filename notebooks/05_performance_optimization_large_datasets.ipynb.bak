@@ -475,6 +475,7 @@
     "test_array = medium_data['observed_temps'].copy()\n",
     "print(f\"Original data: {test_array.shape}, dtype: {test_array.dtype}, memory: {test_array.nbytes / 1024**2:.2f} MB\")\n",
     "\n",
+    # Test different precision levels\n",
     "precision_levels = ['float16', 'float32', 'float64']\n",
     "optimization_results = []\n",
     "\n",

@@ -265,7 +265,7 @@ def validate_metric_output(
     try:
         result = metric_func(obs, mod, **kwargs)
     except Exception as e:
-        raise AssertionError(f"Metric function failed with valid data: {e}")
+        raise AssertionError(f"Metric function failed with valid data: {e}") from e
 
     # Check return type
     if expected_type is not None and not isinstance(result, expected_type):

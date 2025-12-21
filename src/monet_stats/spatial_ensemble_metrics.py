@@ -257,6 +257,60 @@ def BSS(obs: ArrayLike, mod: ArrayLike, threshold: float) -> Any:
     return bss
 
 
+def _sal_structure(X: ArrayLike, threshold: float) -> Tuple[float, float]:
+    """Helper function to calculate structure component for SAL."""
+    import scipy.ndimage as ndi
+
+    result = ndi.label(threshold <= X)
+    if isinstance(result, tuple):
+        labeled, n = result
+    else:
+        labeled = result
+        n = 0 if labeled is None else 1
+    if n == 0:
+        return 0.0, 0.0
+    masses = ndi.sum(X, labeled, index=np.arange(1, n + 1))
+    max_mass = np.max(masses)
+    total_mass = np.sum(masses)
+    return max_mass, total_mass
+
+
+def _sal_centroid(X: ArrayLike, threshold: float) -> Any:
+    """Helper function to calculate centroid for SAL location component."""
+    import scipy.ndimage as ndi
+
+    result = ndi.label(threshold <= X)
+    if isinstance(result, tuple):
+        labeled, n = result
+    else:
+        labeled = result
+        n = 0 if labeled is None else 1
+    if n == 0:
+        return np.array([np.nan, np.nan])
+    centers = np.array(ndi.center_of_mass(X, labeled, index=np.arange(1, n + 1)))
+    masses = ndi.sum(X, labeled, index=np.arange(1, n + 1))
+    weighted = np.average(centers, axis=0, weights=masses)
+    return weighted
+
+
+def _sal_spread(X: ArrayLike, threshold: float) -> Any:
+    """Helper function to calculate spread for SAL location component."""
+    import scipy.ndimage as ndi
+
+    result = ndi.label(threshold <= X)
+    if isinstance(result, tuple):
+        labeled, n = result
+    else:
+        labeled = result
+        n = 0 if labeled is None else 1
+    if n == 0:
+        return 0.0
+    centers = np.array(ndi.center_of_mass(X, labeled, index=np.arange(1, n + 1)))
+    masses = ndi.sum(X, labeled, index=np.arange(1, n + 1))
+    c = np.average(centers, axis=0, weights=masses)
+    return np.average(np.linalg.norm(centers - c, axis=1), weights=masses)
+
+
 def SAL(obs: ArrayLike, mod: ArrayLike, threshold: Optional[float] = None) -> Any:
     """
     Structure-Amplitude-Location (SAL) score for spatial verification.
@@ -304,32 +358,17 @@ def SAL(obs: ArrayLike, mod: ArrayLike, threshold: Optional[float] = None) -> An
     >>> SAL(obs, mod)
     (0.0, 0.0, 0.06324555320336758)
     """
-    import scipy.ndimage as ndi
-
     obs = np.asarray(obs)
     mod = np.asarray(mod)
     if threshold is None:
         threshold = np.mean(obs)
+
     # Amplitude
     A = 2 * (np.mean(mod) - np.mean(obs)) / (np.mean(mod) + np.mean(obs))
 
     # Structure
-    def structure(X: ArrayLike) -> Tuple[float, float]:
-        result = ndi.label(threshold <= X)
-        if isinstance(result, tuple):
-            labeled, n = result
-        else:
-            labeled = result
-            n = 0 if labeled is None else 1
-        if n == 0:
-            return 0.0, 0.0
-        masses = ndi.sum(X, labeled, index=np.arange(1, n + 1))
-        max_mass = np.max(masses)
-        total_mass = np.sum(masses)
-        return max_mass, total_mass
-
-    max_mod, sum_mod = structure(mod)
-    max_obs, sum_obs = structure(obs)
+    max_mod, sum_mod = _sal_structure(mod, threshold)
+    max_obs, sum_obs = _sal_structure(obs, threshold)
     S = (
         2
         * (max_mod / sum_mod - max_obs / sum_obs)
@@ -339,41 +378,13 @@ def SAL(obs: ArrayLike, mod: ArrayLike, threshold: Optional[float] = None) -> An
     )
 
     # Location
-    def centroid(X: ArrayLike) -> Any:
-        result = ndi.label(threshold <= X)
-        if isinstance(result, tuple):
-            labeled, n = result
-        else:
-            labeled = result
-            n = 0 if labeled is None else 1
-        if n == 0:
-            return np.array([np.nan, np.nan])
-        centers = np.array(ndi.center_of_mass(X, labeled, index=np.arange(1, n + 1)))
-        masses = ndi.sum(X, labeled, index=np.arange(1, n + 1))
-        weighted = np.average(centers, axis=0, weights=masses)
-        return weighted
-
-    c_mod = centroid(mod)
-    c_obs = centroid(obs)
+    c_mod = _sal_centroid(mod, threshold)
+    c_obs = _sal_centroid(obs, threshold)
     L1 = np.linalg.norm(c_mod - c_obs) / np.sqrt(obs.shape[0] ** 2 + obs.shape[1] ** 2)
 
     # Spread of objects
-    def spread(X: ArrayLike) -> Any:
-        result = ndi.label(threshold <= X)
-        if isinstance(result, tuple):
-            labeled, n = result
-        else:
-            labeled = result
-            n = 0 if labeled is None else 1
-        if n == 0:
-            return 0.0
-        centers = np.array(ndi.center_of_mass(X, labeled, index=np.arange(1, n + 1)))
-        masses = ndi.sum(X, labeled, index=np.arange(1, n + 1))
-        c = np.average(centers, axis=0, weights=masses)
-        return np.average(np.linalg.norm(centers - c, axis=1), weights=masses)
-
-    r_mod = spread(mod)
-    r_obs = spread(obs)
+    r_mod = _sal_spread(mod, threshold)
+    r_obs = _sal_spread(obs, threshold)
     L2 = abs(r_mod - r_obs) / np.sqrt(obs.shape[0] ** 2 + obs.shape[1] ** 2)
     L = L1 + L2
     return S, A, L

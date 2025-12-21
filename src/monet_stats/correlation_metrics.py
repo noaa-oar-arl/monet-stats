@@ -11,6 +11,57 @@ from numpy.typing import ArrayLike
 from .utils_stats import circlebias, circlebias_m, matchedcompressed
 
 
+def _pearsonr2(a: ArrayLike, b: ArrayLike) -> float:
+    """Helper function to compute squared Pearson correlation."""
+    from scipy.stats import pearsonr
+    if np.var(a) == 0 or np.var(b) == 0:
+        return 0.0
+    r_val, _ = pearsonr(a, b)
+    if np.isnan(r_val):
+        return 0.0
+    return r_val**2
+
+
+def _compute_r2_xarray(obs, mod, axis):
+    """Compute R2 for xarray DataArrays."""
+    try:
+        import xarray as xr
+    except ImportError:
+        raise ImportError("xarray is required for xarray.DataArray inputs") from None
+
+    obs, mod = xr.align(obs, mod, join="inner")
+    if axis is None:
+        axis = -1
+    if isinstance(axis, int):
+        dim = obs.dims[axis]
+    else:
+        dim = axis
+
+    r2 = xr.apply_ufunc(
+        _pearsonr2,
+        obs,
+        mod,
+        input_core_dims=[[dim], [dim]],
+        output_core_dims=[[]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[float],
+    )
+    return r2
+
+
+def _compute_r2_numpy(obs, mod):
+    """Compute R2 for numpy arrays."""
+    from scipy.stats import pearsonr
+    obsc, modc = matchedcompressed(obs, mod)
+    if np.var(obsc) == 0 or np.var(modc) == 0:
+        return 0.0
+    r_val, _ = pearsonr(obsc, modc)
+    if np.isnan(r_val):
+        return 0.0
+    return r_val**2
+
+
 def R2(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     """
     Coefficient of Determination (R^2, unitless)
@@ -47,48 +98,15 @@ def R2(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    from scipy.stats import pearsonr
 
     if (
         xr is not None
         and isinstance(obs, xr.DataArray)
         and isinstance(mod, xr.DataArray)
     ):
-        obs, mod = xr.align(obs, mod, join="inner")
-        if axis is None:
-            axis = -1
-        if isinstance(axis, int):
-            dim = obs.dims[axis]
-        else:
-            dim = axis
-
-        def _pearsonr2(a: ArrayLike, b: ArrayLike) -> float:
-            if np.var(a) == 0 or np.var(b) == 0:
-                return 0.0
-            r_val, _ = pearsonr(a, b)
-            if np.isnan(r_val):
-                return 0.0
-            return r_val**2
-
-        r2 = xr.apply_ufunc(
-            _pearsonr2,
-            obs,
-            mod,
-            input_core_dims=[[dim], [dim]],
-            output_core_dims=[[]],
-            vectorize=True,
-            dask="parallelized",
-            output_dtypes=[float],
-        )
-        return r2
+        return _compute_r2_xarray(obs, mod, axis)
     elif axis is None:
-        obsc, modc = matchedcompressed(obs, mod)
-        if np.var(obsc) == 0 or np.var(modc) == 0:
-            return 0.0
-        r_val, _ = pearsonr(obsc, modc)
-        if np.isnan(r_val):
-            return 0.0
-        return r_val**2
+        return _compute_r2_numpy(obs, mod)
     else:
         raise ValueError("Not ready yet")
 
@@ -209,6 +227,62 @@ def WDRMSE_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         return np.ma.sqrt(np.ma.mean((circlebias_m(mod - obs)) ** 2, axis=axis))
 
 
+def _validate_xarray_dim(dim, axis):
+    """Validate and convert axis to dimension for xarray."""
+    if isinstance(axis, int):
+        return dim
+    elif isinstance(axis, str):
+        return axis
+    else:
+        raise ValueError("axis must be int or str for xarray.DataArray")
+
+
+def _process_xarray_dim(dim):
+    """Process and validate dimension for xarray operations."""
+    if isinstance(dim, str):
+        return dim
+    elif isinstance(dim, (tuple, list)):
+        dim = [str(d) for d in dim]
+        if not all(isinstance(d, str) for d in dim):
+            raise TypeError(
+                "All elements of dim must be str for xarray.DataArray.mean"
+            )
+        return dim
+    else:
+        raise TypeError(
+            "dim must be a string or list of strings for xarray.DataArray.mean"
+        )
+
+
+def _compute_wdrmse_xarray(obs, mod, axis):
+    """Compute WDRMSE for xarray DataArrays."""
+    try:
+        import xarray as xr
+    except ImportError:
+        raise ImportError("xarray is required for xarray.DataArray inputs") from None
+
+    obs, mod = xr.align(obs, mod, join="inner")
+    arr = (circlebias(mod - obs)) ** 2
+    if axis is None:
+        return arr.mean() ** 0.5
+
+    if isinstance(arr, xr.DataArray):
+        dim = _validate_xarray_dim(arr.dims[axis] if isinstance(axis, int) else axis, axis)
+        dim = _process_xarray_dim(dim)
+
+        # Final validation
+        if not (
+            isinstance(dim, str)
+            or (isinstance(dim, list) and all(isinstance(d, str) for d in dim))
+        ):
+            raise TypeError(
+                "dim must be a string or list of strings for xarray.DataArray.mean"
+            )
+        return arr.mean(dim=dim) ** 0.5  # type: ignore
+    else:
+        return arr.mean(axis=axis) ** 0.5
+
+
 def WDRMSE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     """
     Wind Direction Root Mean Square Error (WDRMSE, model unit)
@@ -250,40 +324,7 @@ def WDRMSE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         and isinstance(obs, xr.DataArray)
         and isinstance(mod, xr.DataArray)
     ):
-        obs, mod = xr.align(obs, mod, join="inner")
-        arr = (circlebias(mod - obs)) ** 2
-        if axis is None:
-            return arr.mean() ** 0.5
-        if isinstance(arr, xr.DataArray):
-            if isinstance(axis, int):
-                dim = arr.dims[axis]
-            elif isinstance(axis, str):
-                dim = axis
-            else:
-                raise ValueError("axis must be int or str for xarray.DataArray")
-            # Only allow str or list of str for dim
-            if isinstance(dim, str):
-                pass
-            elif isinstance(dim, (tuple, list)):
-                dim = [str(d) for d in dim]
-                if not all(isinstance(d, str) for d in dim):
-                    raise TypeError(
-                        "All elements of dim must be str for xarray.DataArray.mean"
-                    )
-            else:
-                raise TypeError(
-                    "dim must be a string or list of strings for xarray.DataArray.mean"
-                )
-            if not (
-                isinstance(dim, str)
-                or (isinstance(dim, list) and all(isinstance(d, str) for d in dim))
-            ):
-                raise TypeError(
-                    "dim must be a string or list of strings for xarray.DataArray.mean (final check)"
-                )
-            return arr.mean(dim=dim) ** 0.5  # type: ignore
-        else:
-            return arr.mean(axis=axis) ** 0.5
+        return _compute_wdrmse_xarray(obs, mod, axis)
     elif hasattr(obs, "mean") and hasattr(mod, "mean"):
         return np.sqrt(np.mean((circlebias(mod - obs)) ** 2, axis=axis))
     else:

@@ -124,6 +124,11 @@ mypy_path = "src"
 [tool.ruff]
 line-length = 88
 target-version = "py38"
+exclude = [
+    "docs",
+    "*.ipynb",
+    "notebooks"
+]
 
 [tool.ruff.lint]
 select = [
