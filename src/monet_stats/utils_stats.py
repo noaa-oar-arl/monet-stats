@@ -44,7 +44,10 @@ def matchedcompressed(a1: ArrayLike, a2: ArrayLike) -> Tuple[np.ndarray, np.ndar
 
 def matchmasks(a1: ArrayLike, a2: ArrayLike) -> Tuple[Any, Any]:
     """
-    Match and combine masks from two masked arrays.
+    Match and combine masks from two masked arrays, supporting numpy, masked, and xarray arrays.
+
+    This function is designed to handle mixed-type inputs, including dask-backed xarray.DataArray objects.
+    It ensures that if a dask array is involved, its boolean mask is explicitly computed before being applied.
 
     Typical Use Cases
     -----------------
@@ -53,37 +56,86 @@ def matchmasks(a1: ArrayLike, a2: ArrayLike) -> Tuple[Any, Any]:
 
     Parameters
     ----------
-    a1 : array-like or numpy.ma.MaskedArray
+    a1 : array-like, numpy.ma.MaskedArray, or xarray.DataArray
         First input array.
-    a2 : array-like or numpy.ma.MaskedArray
+    a2 : array-like, numpy.ma.MaskedArray, or xarray.DataArray
         Second input array.
 
     Returns
     -------
-    tuple of numpy.ma.MaskedArray
-        Tuple of (a1_masked, a2_masked) with combined mask.
+    tuple of numpy.ma.MaskedArray or xarray.DataArray
+        Tuple of (a1_masked, a2_masked) with a combined, synchronized mask.
 
     Examples
     --------
     >>> import numpy as np
+    >>> from monet_stats.utils_stats import matchmasks
     >>> a1 = np.ma.array([1, 2, 3], mask=[0, 1, 0])
     >>> a2 = np.ma.array([4, 5, 6], mask=[0, 0, 1])
-    >>> matchmasks(a1, a2)
-    (masked_array(data=[1, --, 3], mask=[False,  True, False]),
-     masked_array(data=[4, --, --], mask=[False, False,  True]))
+    >>> a1_m, a2_m = matchmasks(a1, a2)
+    >>> a1_m.compressed()
+    array([1])
+    >>> a2_m.compressed()
+    array([4])
     """
     try:
         import xarray as xr
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(a1, xr.DataArray) and isinstance(a2, xr.DataArray):
-        # Align xarray objects (works for dask-backed as well)
-        a1a, a2a = xr.align(a1, a2, join="inner")
-        return a1a, a2a
-    else:
-        mask = np.ma.getmaskarray(a1) | np.ma.getmaskarray(a2)
-        return np.ma.masked_where(mask, a1), np.ma.masked_where(mask, a2)
+    is_a1_xr = xr is not None and isinstance(a1, xr.DataArray)
+    is_a2_xr = xr is not None and isinstance(a2, xr.DataArray)
+
+    if is_a1_xr and is_a2_xr:
+        # If both are xarray, align them, which also aligns their masks
+        a1, a2 = xr.align(a1, a2, join="inner")
+        # Ensure that NaN values are also treated as masked
+        # The returned arrays from align will have NaNs where there was no overlap
+        # isnull() will create a boolean mask for these
+        mask = a1.isnull() | a2.isnull()
+        return a1.where(~mask), a2.where(~mask)
+
+    # For mixed types (e.g., xarray and numpy) or just numpy arrays.
+    # We will work with numpy masks.
+
+    # Extract masks. np.ma.getmaskarray returns `False` for unmasked arrays.
+    mask1 = np.ma.getmaskarray(a1)
+    mask2 = np.ma.getmaskarray(a2)
+
+    # Also consider NaNs as masked values.
+    # Need to handle non-numeric data that would raise TypeError with np.isnan
+    # Also, np.isnan on a masked array can be problematic, so get the data.
+    data1 = a1.data if hasattr(a1, 'data') else a1
+    data2 = a2.data if hasattr(a2, 'data') else a2
+    try:
+        nan_mask1 = np.isnan(data1)
+        mask1 = mask1 | nan_mask1
+    except TypeError:
+        pass  # Non-numeric data
+
+    try:
+        nan_mask2 = np.isnan(data2)
+        mask2 = mask2 | nan_mask2
+    except TypeError:
+        pass # Non-numeric data
+
+    # Combine the masks
+    combined_mask = mask1 | mask2
+
+    # If the combined_mask is a dask array, compute it to get a numpy array.
+    if hasattr(combined_mask, "dask"):
+        combined_mask = combined_mask.compute()
+
+    # Apply the combined mask. masked_where works for numpy, masked, and xarray inputs.
+    a1_masked = np.ma.masked_where(combined_mask, a1)
+    a2_masked = np.ma.masked_where(combined_mask, a2)
+
+    # If inputs were xarray, we should try to return xarray objects.
+    # However, np.ma.masked_where returns a MaskedArray.
+    # For now, this is acceptable, as downstream functions can handle it.
+    # The key is that the data and mask are correct.
+
+    return a1_masked, a2_masked
 
 
 def circlebias_m(b: ArrayLike) -> Any:
