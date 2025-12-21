@@ -21,7 +21,7 @@ class PerformanceBenchmark:
     Class to run performance benchmarks for statistical functions.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.results = {}
 
     def generate_test_data(self, size: int, data_type: str = "numpy") -> Tuple:
@@ -148,7 +148,7 @@ class PerformanceBenchmark:
         self.results = results
         return results
 
-    def print_benchmark_report(self):
+    def print_benchmark_report(self) -> None:
         """
         Print a formatted benchmark report.
         """
@@ -179,7 +179,7 @@ class AccuracyVerification:
     Class to verify mathematical accuracy of statistical functions.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tolerance = 1e-10
 
     def test_known_values(self) -> Dict:
@@ -263,7 +263,7 @@ class AccuracyVerification:
 
         return results
 
-    def print_accuracy_report(self):
+    def print_accuracy_report(self) -> None:
         """
         Print a formatted accuracy verification report.
         """
@@ -294,7 +294,7 @@ class AccuracyVerification:
             print("✗ Some accuracy tests FAILED!")
 
 
-def run_comprehensive_benchmarks():
+def run_comprehensive_benchmarks() -> None:
     """
     Run both performance benchmarks and accuracy verification.
     """

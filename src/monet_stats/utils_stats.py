@@ -32,7 +32,7 @@ def matchedcompressed(a1: ArrayLike, a2: ArrayLike) -> Tuple[np.ndarray, np.ndar
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import utils_stats as stats
     >>> a1 = np.ma.array([1, 2, 3], mask=[0, 1, 0])
     >>> a2 = np.ma.array([4, 5, 6], mask=[0, 0, 1])
     >>> stats.matchedcompressed(a1, a2)
@@ -109,7 +109,7 @@ def circlebias_m(b: ArrayLike) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> stats.circlebias_m(np.array([190, -190, 10, -10]))
     array([-170, 170,  10, -10])
     """
@@ -140,7 +140,7 @@ def circlebias(b: ArrayLike) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> stats.circlebias(np.array([190, -190, 10, -10]))
     array([-170, 170,  10, -10])
     """
@@ -176,7 +176,7 @@ def angular_difference(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> stats.angular_difference(10, 350, units='degrees')
     20.0
     """
@@ -215,7 +215,7 @@ def rmse(predictions: ArrayLike, targets: ArrayLike, axis: Optional[int] = None)
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> stats.rmse([1, 2, 3], [1.1, 2.1, 2.9])
     0.1
     """
@@ -245,7 +245,7 @@ def mae(predictions: ArrayLike, targets: ArrayLike, axis: Optional[int] = None) 
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> stats.mae([1, 2, 3], [1.1, 2.1, 2.9])
     0.1
     """
@@ -275,7 +275,7 @@ def correlation(x: ArrayLike, y: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> x = [1, 2, 3, 4, 5]
     >>> y = [2, 4, 6, 8, 10]
     >>> stats.correlation(x, y)

@@ -3,8 +3,7 @@ Tests for interfaces.py module.
 """
 
 import numpy as np
-
-from src.monet_stats.interfaces import (
+from monet_stats.interfaces import (
     BaseStatisticalMetric,
     DataProcessor,
     PerformanceOptimizer,
@@ -21,7 +20,7 @@ class TestBaseStatisticalMetric(BaseStatisticalMetric):
 class TestInterfaces:
     """Test suite for the interfaces module."""
 
-    def test_base_statistical_metric(self):
+    def test_base_statistical_metric(self) -> None:
         """Test the BaseStatisticalMetric class."""
         metric = TestBaseStatisticalMetric()
         obs = np.array([1, 2, 3])
@@ -29,7 +28,7 @@ class TestInterfaces:
         assert metric.validate_inputs(obs, mod)
         assert np.isclose(metric.compute(obs, mod), -1.0)
 
-    def test_data_processor(self):
+    def test_data_processor(self) -> None:
         """Test the DataProcessor class."""
         # Test to_numpy
         assert isinstance(DataProcessor.to_numpy([1, 2, 3]), np.ndarray)
@@ -44,7 +43,7 @@ class TestInterfaces:
         obs_clean, mod_clean = DataProcessor.handle_missing_values(obs_nan, mod_nan)
         assert len(obs_clean) == 1
 
-    def test_performance_optimizer(self):
+    def test_performance_optimizer(self) -> None:
         """Test the PerformanceOptimizer class."""
         # Test chunk_array
         arr = np.arange(10)

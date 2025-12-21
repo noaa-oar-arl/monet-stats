@@ -67,7 +67,7 @@ def WDNMB_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([345, 15, 25])
     >>> stats.WDNMB_m(obs, mod)
@@ -144,7 +144,7 @@ def NMdnB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4, 100])  # 100 is an outlier
     >>> mod = np.array([1.1, 2.2, 3.3, 4.4, 105])
     >>> stats.NMdnB(obs, mod)
@@ -219,7 +219,7 @@ def ME(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import relative_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.ME(obs, mod)
@@ -260,7 +260,7 @@ def MdnE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.MdnE(obs, mod)
@@ -301,7 +301,7 @@ def WDME_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([10, 20, 30])
     >>> stats.WDME_m(obs, mod)
@@ -341,7 +341,7 @@ def WDME(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([10, 20, 30])
     >>> stats.WDME(obs, mod)
@@ -382,7 +382,7 @@ def WDMdnE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([10, 20, 30])
     >>> stats.WDMdnE(obs, mod)
@@ -426,7 +426,7 @@ def NME_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.NME_m(obs, mod)
@@ -469,7 +469,7 @@ def NME_m_ABS(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.NME_m_ABS(obs, mod)
@@ -510,7 +510,7 @@ def NME(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.NME(obs, mod)
@@ -551,7 +551,7 @@ def NMdnE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.NMdnE(obs, mod)
@@ -629,7 +629,7 @@ def USUTPB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 5])
     >>> stats.USUTPB(obs, mod)
@@ -674,7 +674,7 @@ def USUTPE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 5])
     >>> stats.USUTPE(obs, mod)
@@ -797,7 +797,7 @@ def MNPE(obs: ArrayLike, mod: ArrayLike, paxis: int, axis: Optional[int] = None)
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.MNPE(obs, mod, paxis=1)
@@ -848,7 +848,7 @@ def MdnNPE(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.MdnNPE(obs, mod, paxis=1)
@@ -900,7 +900,7 @@ def NMPB(obs: ArrayLike, mod: ArrayLike, paxis: int, axis: Optional[int] = None)
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.NMPB(obs, mod, paxis=1)
@@ -949,7 +949,7 @@ def NMdnPB(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.NMdnPB(obs, mod, paxis=1)
@@ -999,7 +999,7 @@ def NMPE(obs: ArrayLike, mod: ArrayLike, paxis: int, axis: Optional[int] = None)
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.NMPE(obs, mod, paxis=1)
@@ -1050,7 +1050,7 @@ def NMdnPE(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.NMdnPE(obs, mod, paxis=1)
@@ -1157,7 +1157,7 @@ def PSUTNMdnPB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> An
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.PSUTNMdnPB(obs, mod)
@@ -1193,7 +1193,7 @@ def PSUTNMdnPE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> An
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.PSUTNMdnPE(obs, mod)
@@ -1229,7 +1229,7 @@ def MPE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.MPE(obs, mod)
@@ -1275,7 +1275,7 @@ def MdnPE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([[1, 2, 3], [2, 3, 4]])
     >>> mod = np.array([[2, 2, 2], [2, 2, 5]])
     >>> stats.MdnPE(obs, mod)

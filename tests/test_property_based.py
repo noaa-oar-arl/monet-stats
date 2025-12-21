@@ -9,13 +9,12 @@ import numpy as np
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
-
-from src.monet_stats.contingency_metrics import CSI, FAR, POD
-from src.monet_stats.correlation_metrics import IOA, R2, RMSE, pearsonr
-from src.monet_stats.efficiency_metrics import MAPE, MSE, NSE
-from src.monet_stats.error_metrics import MAE
-from src.monet_stats.relative_metrics import NMB
-from src.monet_stats.utils_stats import angular_difference, circlebias
+from monet_stats.contingency_metrics import CSI, FAR, POD
+from monet_stats.correlation_metrics import IOA, R2, RMSE, pearsonr
+from monet_stats.efficiency_metrics import MAPE, MSE, NSE
+from monet_stats.error_metrics import MAE
+from monet_stats.relative_metrics import NMB
+from monet_stats.utils_stats import angular_difference, circlebias
 
 
 class TestPropertyBased:
@@ -32,7 +31,7 @@ class TestPropertyBased:
 
     @given(obs=float_array, mod=float_array)
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_rmse_non_negative(self, obs, mod):
+    def test_rmse_non_negative(self, obs, mod) -> None:
         """Test that RMSE is always non-negative."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -45,7 +44,7 @@ class TestPropertyBased:
 
     @given(obs=float_array, mod=float_array)
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_mae_non_negative(self, obs, mod):
+    def test_mae_non_negative(self, obs, mod) -> None:
         """Test that MAE is always non-negative."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -58,7 +57,7 @@ class TestPropertyBased:
 
     @given(obs=float_array, mod=float_array)
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_perfect_agreement_metrics(self, obs, mod):
+    def test_perfect_agreement_metrics(self, obs, mod) -> None:
         """Test that metrics behave correctly with perfect agreement."""
         # Use the same array for both obs and mod to ensure perfect agreement
         result_rmse = RMSE(obs, obs)
@@ -77,7 +76,7 @@ class TestPropertyBased:
             min_value=-1000, max_value=1000, allow_nan=False, allow_infinity=False
         )
     )
-    def test_circlebias_range(self, value):
+    def test_circlebias_range(self, value) -> None:
         """Test that circlebias returns values in [-180, 180] range."""
         result = circlebias(np.array([value]))
         assert (
@@ -92,7 +91,7 @@ class TestPropertyBased:
             min_value=0, max_value=360, allow_nan=False, allow_infinity=False
         ),
     )
-    def test_angular_difference_range(self, angle1, angle2):
+    def test_angular_difference_range(self, angle1, angle2) -> None:
         """Test that angular_difference returns values in [0, 180] range for degrees."""
         result = angular_difference(angle1, angle2, units="degrees")
         assert (
@@ -101,7 +100,7 @@ class TestPropertyBased:
 
     @given(obs=float_array, mod=float_array)
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_r2_upper_bound(self, obs, mod):
+    def test_r2_upper_bound(self, obs, mod) -> None:
         """Test that R2 is generally <= 1.0."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -119,7 +118,7 @@ class TestPropertyBased:
 
     @given(obs=float_array, mod=float_array)
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_nse_upper_bound(self, obs, mod):
+    def test_nse_upper_bound(self, obs, mod) -> None:
         """Test that NSE is generally <= 1.0."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -152,7 +151,7 @@ class TestPropertyBased:
         ),
     )
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_mse_vs_rmse_relationship(self, obs, mod):
+    def test_mse_vs_rmse_relationship(self, obs, mod) -> None:
         """Test that MSE and RMSE are related (RMSE = sqrt(MSE))."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -179,7 +178,7 @@ class TestPropertyBased:
         )
     )
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_correlation_range(self, obs):
+    def test_correlation_range(self, obs) -> None:
         """Test that correlation coefficient is in [-1, 1] range."""
         # Create mod as a linear transformation of obs plus noise
         mod = obs + np.random.normal(0, 0.1, size=obs.shape)
@@ -213,7 +212,7 @@ class TestPropertyBased:
         ),
     )
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_contingency_metrics_bounds(self, obs, mod):
+    def test_contingency_metrics_bounds(self, obs, mod) -> None:
         """Test that contingency metrics are in valid ranges."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -257,7 +256,7 @@ class TestPropertyBased:
         ),
     )
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_mape_non_negative(self, obs, mod):
+    def test_mape_non_negative(self, obs, mod) -> None:
         """Test that MAPE is non-negative."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -290,7 +289,7 @@ class TestPropertyBased:
         ),
     )
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_symmetric_metrics_with_swapped_inputs(self, obs, mod):
+    def test_symmetric_metrics_with_swapped_inputs(self, obs, mod) -> None:
         """Test that some metrics behave appropriately when inputs are swapped."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -329,7 +328,7 @@ class TestPropertyBased:
         ),
     )
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_relative_metrics_with_scaled_inputs(self, obs, mod):
+    def test_relative_metrics_with_scaled_inputs(self, obs, mod) -> None:
         """Test behavior of relative metrics with scaled inputs."""
         if len(obs) != len(mod):
             # Truncate to same length
@@ -355,7 +354,7 @@ class TestPropertyBased:
             # This can happen when mean of obs is 0
             pass
 
-    def test_edge_case_zeros(self):
+    def test_edge_case_zeros(self) -> None:
         """Test behavior with arrays containing zeros."""
         obs_zeros = np.zeros(10)
         mod_zeros = np.zeros(10)
@@ -371,7 +370,7 @@ class TestPropertyBased:
             abs(mae_result - 0.0) < 1e-10
         ), f"MAE with zeros should be 0, got {mae_result}"
 
-    def test_edge_case_ones(self):
+    def test_edge_case_ones(self) -> None:
         """Test behavior with arrays of all ones."""
         obs_ones = np.ones(10)
         mod_ones = np.ones(10)
@@ -387,7 +386,7 @@ class TestPropertyBased:
             abs(nse_result - 1.0) < 1e-10
         ), f"NSE with identical arrays should be 1, got {nse_result}"
 
-    def test_edge_case_constant_arrays(self):
+    def test_edge_case_constant_arrays(self) -> None:
         """Test behavior with constant but different arrays."""
         obs_const = np.ones(10) * 5
         mod_const = np.ones(10) * 6  # Different constant
@@ -407,7 +406,7 @@ class TestPropertyBased:
             min_value=-360, max_value=360, allow_nan=False, allow_infinity=False
         )
     )
-    def test_circlebias_single_values(self, single_value):
+    def test_circlebias_single_values(self, single_value) -> None:
         """Test circlebias with single values."""
         result = circlebias(np.array([single_value]))
         # Result should be in [-180, 180] range
@@ -432,7 +431,7 @@ class TestPropertyBased:
         ),
     )
     @settings(suppress_health_check=[HealthCheck.too_slow], deadline=1000)
-    def test_ioa_upper_bound(self, arr1, arr2):
+    def test_ioa_upper_bound(self, arr1, arr2) -> None:
         """Test that IOA is generally <= 1.0."""
         if len(arr1) != len(arr2):
             min_len = min(len(arr1), len(arr2))

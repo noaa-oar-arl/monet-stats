@@ -6,8 +6,6 @@ Tests module interactions, API consistency, and end-to-end workflows.
 import numpy as np
 import pytest
 import xarray as xr
-from pytest_benchmark.fixture import BenchmarkFixture
-
 from monet_stats.test_aliases import (
     coefficient_of_determination,
     critical_success_index,
@@ -19,6 +17,8 @@ from monet_stats.test_aliases import (
     pearson_correlation,
     root_mean_squared_error,
 )
+from pytest_benchmark.fixture import BenchmarkFixture
+
 from tests.test_utils import TestDataGenerator
 
 

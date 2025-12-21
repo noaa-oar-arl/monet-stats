@@ -78,7 +78,7 @@ class PluginManager:
     Manager for registering and executing plugins.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._plugins: Dict[str, PluginInterface] = {}
 
     def register_plugin(self, plugin: PluginInterface) -> None:
@@ -172,7 +172,7 @@ class CustomMetric(PluginInterface):
     Example implementation of a custom metric plugin.
     """
 
-    def __init__(self, name: str, description: str, func):
+    def __init__(self, name: str, description: str, func) -> None:
         self._name = name
         self._description = description
         self._func = func
@@ -312,7 +312,7 @@ class ExampleMetrics:
 plugin_manager = PluginManager()
 
 
-def register_builtin_plugins():
+def register_builtin_plugins() -> None:
     """Register built-in example plugins."""
     wmape_plugin = ExampleMetrics.wmape_plugin()
     mape_bias_plugin = ExampleMetrics.mape_bias_plugin()

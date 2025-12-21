@@ -14,6 +14,7 @@ from .utils_stats import circlebias, circlebias_m, matchedcompressed
 def _pearsonr2(a: ArrayLike, b: ArrayLike) -> float:
     """Helper function to compute squared Pearson correlation."""
     from scipy.stats import pearsonr
+
     if np.var(a) == 0 or np.var(b) == 0:
         return 0.0
     r_val, _ = pearsonr(a, b)
@@ -53,6 +54,7 @@ def _compute_r2_xarray(obs, mod, axis):
 def _compute_r2_numpy(obs, mod):
     """Compute R2 for numpy arrays."""
     from scipy.stats import pearsonr
+
     obsc, modc = matchedcompressed(obs, mod)
     if np.var(obsc) == 0 or np.var(modc) == 0:
         return 0.0
@@ -88,7 +90,7 @@ def R2(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.R2(obs, mod)
@@ -137,7 +139,7 @@ def RMSE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.RMSE(obs, mod)
@@ -188,7 +190,7 @@ def WDRMSE_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([10, 20, 30])
     >>> stats.WDRMSE_m(obs, mod)
@@ -227,7 +229,7 @@ def WDRMSE_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         return np.ma.sqrt(np.ma.mean((circlebias_m(mod - obs)) ** 2, axis=axis))
 
 
-def _validate_xarray_dim(dim, axis):
+def _validate_xarray_dim(dim: int, axis):
     """Validate and convert axis to dimension for xarray."""
     if isinstance(axis, int):
         return dim
@@ -237,16 +239,14 @@ def _validate_xarray_dim(dim, axis):
         raise ValueError("axis must be int or str for xarray.DataArray")
 
 
-def _process_xarray_dim(dim):
+def _process_xarray_dim(dim: int):
     """Process and validate dimension for xarray operations."""
     if isinstance(dim, str):
         return dim
     elif isinstance(dim, (tuple, list)):
         dim = [str(d) for d in dim]
         if not all(isinstance(d, str) for d in dim):
-            raise TypeError(
-                "All elements of dim must be str for xarray.DataArray.mean"
-            )
+            raise TypeError("All elements of dim must be str for xarray.DataArray.mean")
         return dim
     else:
         raise TypeError(
@@ -267,7 +267,9 @@ def _compute_wdrmse_xarray(obs, mod, axis):
         return arr.mean() ** 0.5
 
     if isinstance(arr, xr.DataArray):
-        dim = _validate_xarray_dim(arr.dims[axis] if isinstance(axis, int) else axis, axis)
+        dim = _validate_xarray_dim(
+            arr.dims[axis] if isinstance(axis, int) else axis, axis
+        )
         dim = _process_xarray_dim(dim)
 
         # Final validation
@@ -309,7 +311,7 @@ def WDRMSE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([10, 20, 30])
     >>> stats.WDRMSE(obs, mod)
@@ -357,7 +359,7 @@ def RMSEs(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.RMSEs(obs, mod)
@@ -403,7 +405,7 @@ def matchmasks(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> a1 = np.ma.array([1, 2, 3], mask=[0, 1, 0])
     >>> a2 = np.ma.array([4, 5, 6], mask=[0, 0, 1])
     >>> stats.matchmasks(a1, a2)
@@ -440,7 +442,7 @@ def RMSEu(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.RMSEu(obs, mod)
@@ -486,7 +488,7 @@ def d1(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.d1(obs, mod)
@@ -536,7 +538,7 @@ def E1(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.E1(obs, mod)
@@ -585,7 +587,7 @@ def IOA_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.IOA_m(obs, mod)
@@ -641,7 +643,7 @@ def IOA(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.IOA(obs, mod)
@@ -699,7 +701,7 @@ def WDIOA_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([345, 15, 25])
     >>> stats.WDIOA_m(obs, mod)
@@ -786,7 +788,7 @@ def WDIOA(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([345, 15, 25])
     >>> stats.WDIOA(obs, mod)
@@ -842,7 +844,7 @@ def AC(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.AC(obs, mod)
@@ -904,7 +906,7 @@ def WDAC(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([350, 10, 20])
     >>> mod = np.array([10, 20, 30])
     >>> stats.WDAC(obs, mod)
@@ -970,7 +972,7 @@ def taylor_skill(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> 
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.taylor_skill(obs, mod)
@@ -1043,7 +1045,7 @@ def KGE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.KGE(obs, mod)
@@ -1302,7 +1304,7 @@ def CCC(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import correlation_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 2.9, 4.1])
     >>> stats.CCC(obs, mod)
@@ -1365,7 +1367,7 @@ def E1_prime(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.E1_prime(obs, mod)
@@ -1441,7 +1443,7 @@ def IOA_prime(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.IOA_prime(obs, mod)

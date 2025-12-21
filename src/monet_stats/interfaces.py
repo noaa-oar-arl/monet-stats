@@ -77,7 +77,7 @@ class BaseStatisticalMetric(StatisticalMetric):
     Base implementation for statistical metrics with common functionality.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = self.__class__.__name__
         self.description = self.__doc__ or "Statistical metric"
 

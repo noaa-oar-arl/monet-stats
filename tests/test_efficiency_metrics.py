@@ -23,7 +23,7 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
 # Import all efficiency metrics functions
-from src.monet_stats.efficiency_metrics import (
+from monet_stats.efficiency_metrics import (
     MAE,
     MAPE,
     MASE,
@@ -40,7 +40,7 @@ from src.monet_stats.efficiency_metrics import (
 class TestEfficiencyMetrics:
     """Test suite for efficiency metrics functions."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test data for each test method."""
         # Perfect agreement data
         self.obs_perfect = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
@@ -74,7 +74,7 @@ class TestEfficiencyMetrics:
         )
 
     @pytest.mark.unit
-    def test_nse_perfect_agreement(self):
+    def test_nse_perfect_agreement(self) -> None:
         """Test NSE with perfect agreement (should return 1.0)."""
         result = NSE(self.obs_perfect, self.mod_perfect)
         assert np.isclose(
@@ -82,7 +82,7 @@ class TestEfficiencyMetrics:
         ), f"Perfect agreement NSE should be 1.0, got {result}"
 
     @pytest.mark.unit
-    def test_nse_good_agreement(self):
+    def test_nse_good_agreement(self) -> None:
         """Test NSE with good agreement (should be positive)."""
         result = NSE(self.obs_good, self.mod_good)
         assert result > 0.5, f"Good agreement NSE should be > 0.5, got {result}"
@@ -91,13 +91,13 @@ class TestEfficiencyMetrics:
         ), f"NSE should be < 1.0 for imperfect agreement, got {result}"
 
     @pytest.mark.unit
-    def test_nse_poor_agreement(self):
+    def test_nse_poor_agreement(self) -> None:
         """Test NSE with poor agreement (should be negative or low)."""
         result = NSE(self.obs_poor, self.mod_poor)
         assert result < 0.5, f"Poor agreement NSE should be < 0.5, got {result}"
 
     @pytest.mark.unit
-    def test_nse_constant_obs(self):
+    def test_nse_constant_obs(self) -> None:
         """Test NSE with constant observations."""
         obs_const = np.ones(10) * 5.0
         mod_const = np.ones(10) * 5.0
@@ -107,7 +107,7 @@ class TestEfficiencyMetrics:
         ), f"Constant perfect agreement should give NSE=1.0, got {result}"
 
     @pytest.mark.unit
-    def test_nse_zero_denominator(self):
+    def test_nse_zero_denominator(self) -> None:
         """Test NSE when denominator is zero (should return -inf)."""
         obs_const = np.ones(10) * 5.0
         mod_diff = obs_const + 1.0
@@ -117,7 +117,7 @@ class TestEfficiencyMetrics:
         ), f"Zero denominator should give -inf, got {result}"
 
     @pytest.mark.unit
-    def test_nsem_robust_to_masked_arrays(self):
+    def test_nsem_robust_to_masked_arrays(self) -> None:
         """Test NSEm with masked arrays."""
         obs_masked = np.ma.array([1, 2, 3, 4, 5], mask=[0, 0, 1, 0, 0])
         mod_masked = np.ma.array([1, 2, 3, 4, 5], mask=[0, 0, 1, 0, 0])
@@ -127,7 +127,7 @@ class TestEfficiencyMetrics:
         ), f"Masked perfect agreement should give NSEm=1.0, got {result}"
 
     @pytest.mark.unit
-    def test_nselog_with_log_transform(self):
+    def test_nselog_with_log_transform(self) -> None:
         """Test NSElog with logarithmic transformation."""
         obs = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
         mod = np.array([1.1, 2.1, 3.1, 4.1, 5.1])
@@ -140,7 +140,7 @@ class TestEfficiencyMetrics:
         ), f"NSElog should be < 1.0 for imperfect agreement, got {result}"
 
     @pytest.mark.unit
-    def test_rnse_relative_normalization(self):
+    def test_rnse_relative_normalization(self) -> None:
         """Test rNSE relative efficiency."""
         result = rNSE(self.obs_good, self.mod_good)
         assert isinstance(
@@ -151,7 +151,7 @@ class TestEfficiencyMetrics:
         ), f"rNSE should be < 1.0 for imperfect agreement, got {result}"
 
     @pytest.mark.unit
-    def test_mnse_modified_calculation(self):
+    def test_mnse_modified_calculation(self) -> None:
         """Test mNSE modified efficiency."""
         result = mNSE(self.obs_good, self.mod_good)
         assert isinstance(
@@ -162,7 +162,7 @@ class TestEfficiencyMetrics:
         ), f"mNSE should be < 1.0 for imperfect agreement, got {result}"
 
     @pytest.mark.unit
-    def test_pc_percent_correct(self):
+    def test_pc_percent_correct(self) -> None:
         """Test PC (Percent Correct) metric."""
         # Perfect agreement should give 100%
         result_perfect = PC(self.obs_perfect, self.mod_perfect)
@@ -177,7 +177,7 @@ class TestEfficiencyMetrics:
         ), f"Good agreement PC should be > 50%, got {result_good}"
 
     @pytest.mark.unit
-    def test_mae_mean_absolute_error(self):
+    def test_mae_mean_absolute_error(self) -> None:
         """Test MAE (Mean Absolute Error)."""
         result = MAE(self.obs_good, self.mod_good)
         expected = np.mean(np.abs(self.obs_good - self.mod_good))
@@ -187,7 +187,7 @@ class TestEfficiencyMetrics:
         assert result >= 0, f"MAE should be non-negative, got {result}"
 
     @pytest.mark.unit
-    def test_mse_mean_squared_error(self):
+    def test_mse_mean_squared_error(self) -> None:
         """Test MSE (Mean Squared Error)."""
         result = MSE(self.obs_good, self.mod_good)
         expected = np.mean((self.obs_good - self.mod_good) ** 2)
@@ -197,7 +197,7 @@ class TestEfficiencyMetrics:
         assert result >= 0, f"MSE should be non-negative, got {result}"
 
     @pytest.mark.unit
-    def test_mape_mean_absolute_percentage_error(self):
+    def test_mape_mean_absolute_percentage_error(self) -> None:
         """Test MAPE (Mean Absolute Percentage Error)."""
         result = MAPE(self.obs_good, self.mod_good)
         expected = (
@@ -209,7 +209,7 @@ class TestEfficiencyMetrics:
         assert result >= 0, f"MAPE should be non-negative, got {result}"
 
     @pytest.mark.unit
-    def test_mase_mean_absolute_scaled_error(self):
+    def test_mase_mean_absolute_scaled_error(self) -> None:
         """Test MASE (Mean Absolute Scaled Error)."""
         result = MASE(self.obs_good, self.mod_good)
         assert isinstance(
@@ -220,7 +220,7 @@ class TestEfficiencyMetrics:
     @pytest.mark.parametrize(
         "metric_func", [NSE, NSEm, NSElog, MSE, MAPE, MASE, PC, mNSE, rNSE]
     )
-    def test_efficiency_metrics_output_type_parametrized(self, metric_func):
+    def test_efficiency_metrics_output_type_parametrized(self, metric_func) -> None:
         """Test that efficiency metrics return appropriate values."""
         result = metric_func(self.obs_random, self.mod_random)
         assert isinstance(
@@ -228,7 +228,7 @@ class TestEfficiencyMetrics:
         ), f"{metric_func.__name__} should return a numeric value, got {type(result)}"
 
     @pytest.mark.unit
-    def test_efficiency_metrics_mathematical_correctness(self):
+    def test_efficiency_metrics_mathematical_correctness(self) -> None:
         """Test mathematical correctness of efficiency metrics."""
         # Create data with known properties
         obs = np.array([1, 2, 3, 4, 5])
@@ -252,7 +252,7 @@ class TestEfficiencyMetrics:
         ), f"Expected NSE={expected_nse}, got {nse_result}"
 
     @pytest.mark.unit
-    def test_nan_handling(self):
+    def test_nan_handling(self) -> None:
         """Test handling of NaN values."""
         obs_nan = np.array([1.0, 2.0, np.nan, 4.0, 5.0])
         mod_nan = np.array([1.1, 2.1, 3.1, 4.1, 5.1])
@@ -265,7 +265,7 @@ class TestEfficiencyMetrics:
             ), f"{metric_func.__name__} should handle NaN gracefully, got {type(result)}"
 
     @pytest.mark.unit
-    def test_inf_handling(self):
+    def test_inf_handling(self) -> None:
         """Test handling of infinity values."""
         obs_inf = np.array([1.0, 2.0, np.inf, 4.0, 5.0])
         mod_inf = np.array([1.1, 2.1, 3.1, 4.1, 5.1])
@@ -278,7 +278,7 @@ class TestEfficiencyMetrics:
             ), f"{metric_func.__name__} should handle infinity gracefully, got {type(result)}"
 
     @pytest.mark.unit
-    def test_empty_arrays(self):
+    def test_empty_arrays(self) -> None:
         """Test handling of empty arrays."""
         obs_empty = np.array([])
         mod_empty = np.array([])
@@ -292,7 +292,7 @@ class TestEfficiencyMetrics:
             ), f"{metric_func.__name__} should handle empty arrays gracefully, got {result}"
 
     @pytest.mark.unit
-    def test_single_value_arrays(self):
+    def test_single_value_arrays(self) -> None:
         """Test handling of single value arrays."""
         obs_single = np.array([5.0])
         mod_single = np.array([5.0])
@@ -304,7 +304,7 @@ class TestEfficiencyMetrics:
             ), f"{metric_func.__name__} should handle single values, got {type(result)}"
 
     @pytest.mark.xarray
-    def test_xarray_dataarray_input(self):
+    def test_xarray_dataarray_input(self) -> None:
         """Test that functions work with xarray DataArray inputs."""
         # Test NSE with xarray
         result = NSE(self.obs_xr, self.mod_xr)
@@ -319,7 +319,7 @@ class TestEfficiencyMetrics:
         ), f"MSE should work with xarray inputs, got {type(result)}"
 
     @pytest.mark.xarray
-    def test_xarray_alignment(self):
+    def test_xarray_alignment(self) -> None:
         """Test that xarray DataArrays are properly aligned."""
         # Create misaligned DataArrays
         obs_misaligned = xr.DataArray(
@@ -334,7 +334,7 @@ class TestEfficiencyMetrics:
         assert isinstance(result, (float, np.floating, xr.DataArray))
 
     @pytest.mark.slow
-    def test_performance_large_arrays(self):
+    def test_performance_large_arrays(self) -> None:
         """Test performance with large arrays."""
         # Create large test arrays
         np.random.seed(42)
@@ -363,7 +363,7 @@ class TestEfficiencyMetrics:
         assert isinstance(mae_result, (float, np.floating))
 
     @pytest.mark.mathematical
-    def test_nse_bounds(self):
+    def test_nse_bounds(self) -> None:
         """Test that NSE values are within expected bounds."""
         # Perfect agreement
         nse_perfect = NSE(self.obs_perfect, self.mod_perfect)
@@ -378,7 +378,7 @@ class TestEfficiencyMetrics:
         assert isinstance(nse_poor, (float, np.floating))
 
     @pytest.mark.mathematical
-    def test_error_metric_relationships(self):
+    def test_error_metric_relationships(self) -> None:
         """Test mathematical relationships between error metrics."""
         obs = self.obs_good
         mod = self.mod_good
@@ -390,7 +390,7 @@ class TestEfficiencyMetrics:
         assert mse >= mae**2, f"MSE should be >= MAE^2: {mse} >= {mae**2}"
 
     @pytest.mark.parametrize("axis", [None, 0])
-    def test_axis_parameter(self, axis):
+    def test_axis_parameter(self, axis) -> None:
         """Test axis parameter for functions that support it."""
         # Create 2D data
         obs_2d = np.array([[1, 2, 3], [4, 5, 6]])
@@ -412,7 +412,7 @@ class TestEfficiencyMetrics:
                 ), f"{metric_func.__name__} result shape mismatch"
 
     @pytest.mark.unit
-    def test_tolerance_in_pc_metric(self):
+    def test_tolerance_in_pc_metric(self) -> None:
         """Test tolerance parameter in PC metric."""
         obs = np.array([10, 20, 30, 40, 50])
         mod = np.array([10.5, 20.5, 30.5, 40.5, 50.5])  # 5% error
@@ -442,7 +442,7 @@ class TestEfficiencyMetricsHypothesis:
             ),
         )
     )
-    def test_nse_perfect_agreement_property(self, data):
+    def test_nse_perfect_agreement_property(self, data) -> None:
         """Test that NSE returns 1.0 for perfect agreement."""
         assume(np.std(data) > 0)  # Avoid constant arrays
         result = NSE(data, data)
@@ -466,7 +466,7 @@ class TestEfficiencyMetricsHypothesis:
             ),
         ),
     )
-    def test_mape_non_negative_property(self, obs, mod):
+    def test_mape_non_negative_property(self, obs, mod) -> None:
         """Test that MAPE is always non-negative."""
         assume(np.all(obs != 0))  # Avoid division by zero
         result = MAPE(obs, mod)
@@ -488,7 +488,7 @@ class TestEfficiencyMetricsHypothesis:
             ),
         ),
     )
-    def test_mse_mae_relationship_property(self, obs, mod):
+    def test_mse_mae_relationship_property(self, obs, mod) -> None:
         """Test that MSE >= MAE^2."""
         assume(len(obs) > 0)
         mae = MAE(obs, mod)
@@ -499,7 +499,7 @@ class TestEfficiencyMetricsHypothesis:
 class TestEfficiencyMetricsEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_zero_observation_mape(self):
+    def test_zero_observation_mape(self) -> None:
         """Test MAPE with zero observations (should handle division by zero)."""
         obs = np.array([0, 1, 2, 3, 4])
         mod = np.array([0.1, 1.1, 2.1, 3.1, 4.1])
@@ -508,7 +508,7 @@ class TestEfficiencyMetricsEdgeCases:
         result = MAPE(obs, mod)
         assert isinstance(result, (float, np.floating))
 
-    def test_constant_arrays_nse(self):
+    def test_constant_arrays_nse(self) -> None:
         """Test NSE with constant arrays."""
         obs_const = np.ones(10) * 5.0
         mod_const = np.ones(10) * 5.0
@@ -522,7 +522,7 @@ class TestEfficiencyMetricsEdgeCases:
         result_imperfect = NSE(obs_const, mod_diff)
         assert np.isinf(result_imperfect) and result_imperfect < 0
 
-    def test_negative_values(self):
+    def test_negative_values(self) -> None:
         """Test metrics with negative input values."""
         obs = np.array([-5, -3, -1, 1, 3])
         mod = np.array([-4.9, -2.9, -0.9, 1.1, 3.1])
@@ -533,7 +533,7 @@ class TestEfficiencyMetricsEdgeCases:
                 result, (float, np.floating)
             ), f"{metric_func.__name__} should handle negative values, got {type(result)}"
 
-    def test_large_arrays_memory_efficiency(self):
+    def test_large_arrays_memory_efficiency(self) -> None:
         """Test memory efficiency with large arrays."""
         # Create moderately large arrays
         np.random.seed(42)

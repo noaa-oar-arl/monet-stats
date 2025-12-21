@@ -39,7 +39,7 @@ def HSS(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import contingency_metrics as stats
     >>> obs = np.array([1, 0, 1, 0])
     >>> mod = np.array([1, 1, 0, 0])
     >>> stats.HSS(obs, mod, minval=0.5)
@@ -88,7 +88,7 @@ def ETS(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 0, 1, 0])
     >>> mod = np.array([1, 1, 0, 0])
     >>> stats.ETS(obs, mod, minval=0.5, maxval=None)
@@ -141,7 +141,7 @@ def CSI(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 0, 1, 0])
     >>> mod = np.array([1, 1, 0, 0])
     >>> stats.CSI(obs, mod, minval=0.5, maxval=None)
@@ -252,7 +252,7 @@ def FAR(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([0, 1, 1, 0])
     >>> mod = np.array([1, 1, 0, 0])
     >>> stats.FAR(obs, mod, minval=0.5)
