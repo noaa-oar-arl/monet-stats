@@ -1111,7 +1111,7 @@ def MASE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet_stats import efficiency_metrics as stats
+    >>> from monet_stats import error_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 3.1, 4.1])
     >>> stats.MASE(obs, mod)

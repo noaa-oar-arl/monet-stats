@@ -39,7 +39,7 @@ def HSS(
     Examples
     --------
     >>> import numpy as np
-    >>> from monet_stats import efficiency_metrics as stats
+    >>> from monet_stats import contingency_metrics as stats
     >>> obs = np.array([1, 0, 1, 0])
     >>> mod = np.array([1, 1, 0, 0])
     >>> stats.HSS(obs, mod, minval=0.5)

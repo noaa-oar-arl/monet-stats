@@ -6,8 +6,6 @@ Tests various data sizes and optimization strategies.
 import numpy as np
 import pytest
 import xarray as xr
-from pytest_benchmark.fixture import BenchmarkFixture
-
 from monet_stats.test_aliases import (
     akaike_information_criterion,
     bayesian_information_criterion,
@@ -28,13 +26,15 @@ from monet_stats.test_aliases import (
     root_mean_squared_error,
     spearman_correlation,
 )
+from pytest_benchmark.fixture import BenchmarkFixture
+
 from tests.test_utils import TestDataGenerator
 
 
 class TestPerformanceBenchmarks:
     """Performance benchmarks for statistical metrics."""
 
-    def test_error_metrics_performance_small(self, benchmark: BenchmarkFixture):
+    def test_error_metrics_performance_small(self, benchmark: BenchmarkFixture) -> None:
         """Benchmark error metrics on small datasets (1K points)."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=1000, correlation=0.8)
@@ -50,7 +50,9 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_error_metrics_performance_medium(self, benchmark: BenchmarkFixture):
+    def test_error_metrics_performance_medium(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark error metrics on medium datasets (10K points)."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=10000, correlation=0.8)
@@ -66,7 +68,7 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_error_metrics_performance_large(self, benchmark: BenchmarkFixture):
+    def test_error_metrics_performance_large(self, benchmark: BenchmarkFixture) -> None:
         """Benchmark error metrics on large datasets (100K points)."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=100000, correlation=0.8)
@@ -82,7 +84,9 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_correlation_metrics_performance_small(self, benchmark: BenchmarkFixture):
+    def test_correlation_metrics_performance_small(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark correlation metrics on small datasets (1K points)."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=1000, correlation=0.8)
@@ -96,7 +100,9 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_correlation_metrics_performance_medium(self, benchmark: BenchmarkFixture):
+    def test_correlation_metrics_performance_medium(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark correlation metrics on medium datasets (10K points)."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=10000, correlation=0.8)
@@ -110,7 +116,9 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_correlation_metrics_performance_large(self, benchmark: BenchmarkFixture):
+    def test_correlation_metrics_performance_large(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark correlation metrics on large datasets (100K points)."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=100000, correlation=0.8)
@@ -124,7 +132,9 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_contingency_metrics_performance_small(self, benchmark: BenchmarkFixture):
+    def test_contingency_metrics_performance_small(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark contingency metrics on small datasets (1K points)."""
         TestDataGenerator()
         obs_binary = np.random.choice([0, 1], size=1000)
@@ -142,7 +152,9 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_contingency_metrics_performance_large(self, benchmark: BenchmarkFixture):
+    def test_contingency_metrics_performance_large(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark contingency metrics on large datasets (100K points)."""
         TestDataGenerator()
         obs_binary = np.random.choice([0, 1], size=100000)
@@ -160,7 +172,9 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_efficiency_metrics_performance_small(self, benchmark: BenchmarkFixture):
+    def test_efficiency_metrics_performance_small(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark efficiency metrics on small datasets (1K points)."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=1000, correlation=0.8)
@@ -175,7 +189,9 @@ class TestPerformanceBenchmarks:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_efficiency_metrics_performance_large(self, benchmark: BenchmarkFixture):
+    def test_efficiency_metrics_performance_large(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark efficiency metrics on large datasets (100K points)."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=100000, correlation=0.8)
@@ -194,7 +210,9 @@ class TestPerformanceBenchmarks:
 class TestSpatialPerformance:
     """Performance tests for spatial data operations."""
 
-    def test_spatial_error_metrics_performance(self, benchmark: BenchmarkFixture):
+    def test_spatial_error_metrics_performance(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark spatial error metrics on 2D grids."""
         data_gen = TestDataGenerator()
         obs_grid, mod_grid = data_gen.generate_spatial_data(shape=(100, 100))
@@ -207,7 +225,7 @@ class TestSpatialPerformance:
         result = benchmark(run_metrics)
         assert result is not None
 
-    def test_large_spatial_grids(self, benchmark: BenchmarkFixture):
+    def test_large_spatial_grids(self, benchmark: BenchmarkFixture) -> None:
         """Benchmark performance on large spatial grids."""
         data_gen = TestDataGenerator()
         obs_grid, mod_grid = data_gen.generate_spatial_data(shape=(500, 500))
@@ -225,7 +243,9 @@ class TestXarrayPerformance:
     """Performance tests for xarray DataArray operations."""
 
     @pytest.mark.xarray
-    def test_xarray_error_metrics_performance_small(self, benchmark: BenchmarkFixture):
+    def test_xarray_error_metrics_performance_small(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark xarray error metrics on small datasets."""
         np.random.seed(42)
 
@@ -250,7 +270,9 @@ class TestXarrayPerformance:
         assert result is not None
 
     @pytest.mark.xarray
-    def test_xarray_error_metrics_performance_medium(self, benchmark: BenchmarkFixture):
+    def test_xarray_error_metrics_performance_medium(
+        self, benchmark: BenchmarkFixture
+    ) -> None:
         """Benchmark xarray error metrics on medium datasets."""
         np.random.seed(42)
 
@@ -278,7 +300,7 @@ class TestXarrayPerformance:
 class TestAlgorithmOptimization:
     """Test different algorithm implementations for performance."""
 
-    def test_vectorized_performance(self, benchmark: BenchmarkFixture):
+    def test_vectorized_performance(self, benchmark: BenchmarkFixture) -> None:
         """Benchmark the vectorized MAE implementation."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=10000, correlation=0.8)
@@ -290,7 +312,7 @@ class TestAlgorithmOptimization:
         result = benchmark(vectorized_mae)
         assert result is not None
 
-    def test_loop_performance(self, benchmark: BenchmarkFixture):
+    def test_loop_performance(self, benchmark: BenchmarkFixture) -> None:
         """Benchmark the loop-based MAE implementation."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=10000, correlation=0.8)
@@ -310,7 +332,9 @@ class TestMemoryUsage:
     """Test memory usage patterns for different data sizes."""
 
     @pytest.mark.parametrize("size", [1000, 10000, 100000])
-    def test_memory_scaling_error_metrics(self, benchmark: BenchmarkFixture, size: int):
+    def test_memory_scaling_error_metrics(
+        self, benchmark: BenchmarkFixture, size: int
+    ) -> None:
         """Test memory scaling of error metrics."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=size, correlation=0.8)
@@ -325,7 +349,7 @@ class TestMemoryUsage:
     @pytest.mark.parametrize("size", [1000, 10000, 100000])
     def test_memory_scaling_correlation_metrics(
         self, benchmark: BenchmarkFixture, size: int
-    ):
+    ) -> None:
         """Test memory scaling of correlation metrics."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=size, correlation=0.8)
@@ -341,7 +365,7 @@ class TestMemoryUsage:
 class TestRealWorldScenarios:
     """Performance tests for realistic atmospheric data scenarios."""
 
-    def test_climate_model_evaluation(self, benchmark: BenchmarkFixture):
+    def test_climate_model_evaluation(self, benchmark: BenchmarkFixture) -> None:
         """Benchmark typical climate model evaluation scenario."""
         # Simulate monthly temperature data for 10 years at 100 grid points
         n_time = 120  # 10 years * 12 months
@@ -367,7 +391,7 @@ class TestRealWorldScenarios:
         result = benchmark(run_evaluation)
         assert result is not None
 
-    def test_weather_forecast_verification(self, benchmark: BenchmarkFixture):
+    def test_weather_forecast_verification(self, benchmark: BenchmarkFixture) -> None:
         """Benchmark typical weather forecast verification scenario."""
         # Simulate 24-hour forecast for 30 days at 50 locations
         n_forecasts = 30

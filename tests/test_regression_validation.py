@@ -5,7 +5,6 @@ Tests known values and mathematical correctness.
 
 import numpy as np
 import pytest
-
 from monet_stats.test_aliases import (
     coefficient_of_determination,
     critical_success_index,
@@ -20,13 +19,14 @@ from monet_stats.test_aliases import (
     root_mean_squared_error,
     spearman_correlation,
 )
+
 from tests.test_utils import TestDataGenerator
 
 
 class TestKnownValues:
     """Test against known analytical values."""
 
-    def test_simple_linear_relationship(self):
+    def test_simple_linear_relationship(self) -> None:
         """Test metrics with simple linear relationship where analytical values are known."""
         # Simple case: y = 2x + 1
         x = np.array([1, 2, 3, 4, 5])
@@ -57,7 +57,7 @@ class TestKnownValues:
         assert abs(corr - 1.0) < 1e-10, f"Correlation should be 1.0, got {corr}"
         assert abs(r2 - 1.0) < 1e-10, f"R² should be 1.0, got {r2}"
 
-    def test_known_statistical_examples(self):
+    def test_known_statistical_examples(self) -> None:
         """Test with known statistical examples from literature."""
         # Example from standard statistics textbooks
         x = np.array([1, 2, 3, 4, 5])
@@ -80,7 +80,7 @@ class TestKnownValues:
             0 < mae_noisy < 0.5
         ), f"MAE with noise should be small but positive, got {mae_noisy}"
 
-    def test_contingency_table_known_values(self):
+    def test_contingency_table_known_values(self) -> None:
         """Test contingency table metrics with known values."""
         # Classic 2x2 contingency table
         #         Obs
@@ -111,7 +111,7 @@ class TestKnownValues:
 class TestMathematicalIdentities:
     """Test mathematical identities and relationships."""
 
-    def test_jensens_inequality(self):
+    def test_jensens_inequality(self) -> None:
         """Test Jensen's inequality: RMSE >= MAE."""
         data_gen = TestDataGenerator()
 
@@ -129,7 +129,7 @@ class TestMathematicalIdentities:
                 rmse >= mae - 1e-10
             ), f"Jensen's inequality violated: RMSE ({rmse}) < MAE ({mae}) for correlation {correlation}"
 
-    def test_correlation_bounds(self):
+    def test_correlation_bounds(self) -> None:
         """Test that correlation coefficients are within valid bounds."""
         data_gen = TestDataGenerator()
 
@@ -159,7 +159,7 @@ class TestMathematicalIdentities:
                 abs(pearson_r**2 - r2) < 1e-10
             ), f"R² should equal Pearson correlation squared: {pearson_r**2} vs {r2}"
 
-    def test_index_of_agreement_bounds(self):
+    def test_index_of_agreement_bounds(self) -> None:
         """Test that Index of Agreement is within valid bounds."""
         data_gen = TestDataGenerator()
 
@@ -189,7 +189,7 @@ class TestMathematicalIdentities:
             if correlation > 0.5:
                 assert ioa > 0.5, f"IOA should be > 0.5 for high correlation, got {ioa}"
 
-    def test_contingency_metric_bounds(self):
+    def test_contingency_metric_bounds(self) -> None:
         """Test that contingency metrics are within valid bounds."""
         # Test various contingency scenarios
         scenarios = [
@@ -220,7 +220,7 @@ class TestMathematicalIdentities:
 class TestScaleAndTranslationInvariance:
     """Test scale and translation invariance properties."""
 
-    def test_correlation_scale_invariance(self):
+    def test_correlation_scale_invariance(self) -> None:
         """Test that correlation is invariant to linear transformations."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=100, correlation=0.8)
@@ -239,7 +239,7 @@ class TestScaleAndTranslationInvariance:
                 abs(corr_original - corr_scaled) < 1e-10
             ), f"Correlation not scale-invariant: {corr_original} vs {corr_scaled}"
 
-    def test_correlation_translation_invariance(self):
+    def test_correlation_translation_invariance(self) -> None:
         """Test that correlation is invariant to translations."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=100, correlation=0.8)
@@ -262,7 +262,7 @@ class TestScaleAndTranslationInvariance:
 class TestErrorMetricConsistency:
     """Test consistency between different error metrics."""
 
-    def test_error_metric_relationships(self):
+    def test_error_metric_relationships(self) -> None:
         """Test mathematical relationships between error metrics."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(n_samples=1000, correlation=0.7)
@@ -284,7 +284,7 @@ class TestErrorMetricConsistency:
                 rmse > mae
             ), f"RMSE should be > MAE for non-uniform errors: {rmse} vs {mae}"
 
-    def test_normalized_metrics(self):
+    def test_normalized_metrics(self) -> None:
         """Test normalized error metrics."""
         TestDataGenerator()
 
@@ -306,7 +306,7 @@ class TestErrorMetricConsistency:
 class TestReproducibility:
     """Test reproducibility of results."""
 
-    def test_deterministic_results(self):
+    def test_deterministic_results(self) -> None:
         """Test that metrics produce deterministic results."""
         data_gen = TestDataGenerator()
         obs, mod = data_gen.generate_correlated_data(

@@ -5,7 +5,6 @@ Tests for data_processing.py module.
 import numpy as np
 import pandas as pd
 import xarray as xr
-
 from monet_stats.data_processing import (
     align_arrays,
     compute_anomalies,
@@ -19,7 +18,7 @@ from monet_stats.data_processing import (
 class TestDataProcessing:
     """Test suite for data processing functions."""
 
-    def test_to_numpy(self):
+    def test_to_numpy(self) -> None:
         """Test that to_numpy converts various data types to numpy arrays."""
         # Test with numpy array
         data_np = np.array([1, 2, 3])
@@ -41,7 +40,7 @@ class TestDataProcessing:
         data_list = [1, 2, 3]
         assert isinstance(to_numpy(data_list), np.ndarray)
 
-    def test_align_arrays(self):
+    def test_align_arrays(self) -> None:
         """Test that align_arrays aligns numpy and xarray arrays."""
         # Test with numpy arrays
         obs_np = np.array([1, 2, 3])
@@ -57,7 +56,7 @@ class TestDataProcessing:
         assert obs_aligned.shape == (2,)
         assert mod_aligned.shape == (2,)
 
-    def test_handle_missing_values(self):
+    def test_handle_missing_values(self) -> None:
         """Test that handle_missing_values removes NaNs."""
         obs = np.array([1, 2, np.nan, 4])
         mod = np.array([5, np.nan, 7, 8])
@@ -65,7 +64,7 @@ class TestDataProcessing:
         assert len(obs_clean) == 2
         assert len(mod_clean) == 2
 
-    def test_normalize_data(self):
+    def test_normalize_data(self) -> None:
         """Test that normalize_data normalizes data."""
         obs = np.array([1, 2, 3, 4, 5])
         mod = np.array([1, 2, 3, 4, 5])
@@ -73,7 +72,7 @@ class TestDataProcessing:
         assert np.isclose(np.mean(obs_norm), 0)
         assert np.isclose(np.std(obs_norm), 1)
 
-    def test_detrend_data(self):
+    def test_detrend_data(self) -> None:
         """Test that detrend_data removes trends."""
         obs = np.array([1, 2, 3, 4, 5])
         mod = np.array([1, 2, 3, 4, 5])
@@ -81,7 +80,7 @@ class TestDataProcessing:
         # A linear trend should result in near-zero values after detrending
         assert np.allclose(obs_detrended, 0, atol=1e-9)
 
-    def test_compute_anomalies(self):
+    def test_compute_anomalies(self) -> None:
         """Test that compute_anomalies computes anomalies."""
         obs = np.array([1, 2, 3, 4, 5])
         mod = np.array([1, 2, 3, 4, 5])

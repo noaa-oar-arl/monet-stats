@@ -32,7 +32,7 @@ def matchedcompressed(a1: ArrayLike, a2: ArrayLike) -> Tuple[np.ndarray, np.ndar
     Examples
     --------
     >>> import numpy as np
-    >>> from monet_stats import efficiency_metrics as stats
+    >>> from monet_stats import utils_stats as stats
     >>> a1 = np.ma.array([1, 2, 3], mask=[0, 1, 0])
     >>> a2 = np.ma.array([4, 5, 6], mask=[0, 0, 1])
     >>> stats.matchedcompressed(a1, a2)

@@ -3,14 +3,13 @@ Tests for plugin_system.py module.
 """
 
 import numpy as np
-
 from monet_stats.plugin_system import CustomMetric, PluginManager
 
 
 class TestPluginSystem:
     """Test suite for the plugin system."""
 
-    def test_plugin_manager(self):
+    def test_plugin_manager(self) -> None:
         """Test the PluginManager class."""
         manager = PluginManager()
 
@@ -34,7 +33,7 @@ class TestPluginSystem:
         manager.unregister_plugin("dummy")
         assert "dummy" not in manager.list_plugins()
 
-    def test_custom_metric(self):
+    def test_custom_metric(self) -> None:
         """Test the CustomMetric class."""
 
         def dummy_metric(obs, mod):

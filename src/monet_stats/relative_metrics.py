@@ -219,7 +219,7 @@ def ME(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet_stats import efficiency_metrics as stats
+    >>> from monet_stats import relative_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.ME(obs, mod)
