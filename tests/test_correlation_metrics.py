@@ -11,7 +11,7 @@ import xarray as xr
 from hypothesis import given
 from hypothesis import strategies as st
 
-from src.monet_stats.correlation_metrics import (
+from monet_stats.correlation_metrics import (
     AC,
     CCC,
     E1,

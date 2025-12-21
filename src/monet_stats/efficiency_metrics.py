@@ -42,7 +42,7 @@ def NSE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 2.9, 4.1])
     >>> stats.NSE(obs, mod)
@@ -113,7 +113,7 @@ def NSEm(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 2.9, 4.1])
     >>> stats.NSEm(obs, mod)
@@ -175,7 +175,7 @@ def NSElog(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 2.9, 4.1])
     >>> stats.NSElog(obs, mod)
@@ -255,7 +255,7 @@ def rNSE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 2.9, 4.1])
     >>> stats.rNSE(obs, mod)
@@ -321,7 +321,7 @@ def mNSE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 2.9, 4.1])
     >>> stats.mNSE(obs, mod)
@@ -385,7 +385,7 @@ def PC(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.05, 2.1, 2.95, 4.05])
     >>> stats.PC(obs, mod)  # With default tolerance
@@ -445,7 +445,7 @@ def MAE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MAE(obs, mod)
@@ -493,7 +493,7 @@ def MSE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MSE(obs, mod)
@@ -541,7 +541,7 @@ def MAPE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MAPE(obs, mod)
@@ -589,7 +589,7 @@ def MASE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 3.1, 4.1])
     >>> stats.MASE(obs, mod)

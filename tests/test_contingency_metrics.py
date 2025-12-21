@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from src.monet_stats.contingency_metrics import (
+from monet_stats.contingency_metrics import (
     CSI,  # Critical Success Index
     ETS,  # Equitable Threat Score
     FAR,  # False Alarm Rate

@@ -10,12 +10,12 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
-from src.monet_stats.contingency_metrics import CSI, FAR, POD
-from src.monet_stats.correlation_metrics import IOA, R2, RMSE, pearsonr
-from src.monet_stats.efficiency_metrics import MAPE, MSE, NSE
-from src.monet_stats.error_metrics import MAE
-from src.monet_stats.relative_metrics import NMB
-from src.monet_stats.utils_stats import angular_difference, circlebias
+from monet_stats.contingency_metrics import CSI, FAR, POD
+from monet_stats.correlation_metrics import IOA, R2, RMSE, pearsonr
+from monet_stats.efficiency_metrics import MAPE, MSE, NSE
+from monet_stats.error_metrics import MAE
+from monet_stats.relative_metrics import NMB
+from monet_stats.utils_stats import angular_difference, circlebias
 
 
 class TestPropertyBased:

@@ -762,7 +762,7 @@ def MAE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MAE(obs, mod)
@@ -811,7 +811,7 @@ def MedAE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MedAE(obs, mod)
@@ -858,7 +858,7 @@ def sMAPE_original(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.sMAPE(obs, mod)
@@ -907,7 +907,7 @@ def CRMSE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.CRMSE(obs, mod)
@@ -958,7 +958,7 @@ def MAPE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MAPE(obs, mod)
@@ -1005,7 +1005,7 @@ def sMAPE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.sMAPE(obs, mod)
@@ -1055,7 +1055,7 @@ def NRMSE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.NRMSE(obs, mod)
@@ -1111,7 +1111,7 @@ def MASE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 3.1, 4.1])
     >>> stats.MASE(obs, mod)
@@ -1170,7 +1170,7 @@ def MASEm(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([1.1, 2.1, 3.1, 4.1])
     >>> stats.MASEm(obs, mod)
@@ -1230,7 +1230,7 @@ def RMSPE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.RMSPE(obs, mod)
@@ -1277,7 +1277,7 @@ def MAPEm(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MAPEm(obs, mod)
@@ -1324,7 +1324,7 @@ def sMAPEm(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.sMAPEm(obs, mod)
@@ -1373,7 +1373,7 @@ def NSC(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.NSC(obs, mod)
@@ -1426,7 +1426,7 @@ def NSE_alpha(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.NSE_alpha(obs, mod)
@@ -1473,7 +1473,7 @@ def NSE_beta(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3, 4])
     >>> mod = np.array([2, 2, 2, 2])
     >>> stats.NSE_beta(obs, mod)
@@ -1520,7 +1520,7 @@ def MAE_m(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MAE_m(obs, mod)
@@ -1567,7 +1567,7 @@ def MedAE_m(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.MedAE_m(obs, mod)
@@ -1614,7 +1614,7 @@ def RMSE(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.RMSE(obs, mod)
@@ -1664,7 +1664,7 @@ def RMSE_m(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.RMSE_m(obs, mod)
@@ -1711,7 +1711,7 @@ def IOA(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.IOA(obs, mod)
@@ -1766,7 +1766,7 @@ def IOA_m(obs, mod, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from monet.util import stats
+    >>> from monet_stats import efficiency_metrics as stats
     >>> obs = np.array([1, 2, 3])
     >>> mod = np.array([2, 2, 4])
     >>> stats.IOA_m(obs, mod)

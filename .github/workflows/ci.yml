@@ -10,7 +10,7 @@ jobs:
   lint:
     name: pre-commit
     runs-on: ubuntu-latest
-    if: github.repository == 'noaa-oar-arl/monet'
+    if: github.repository == 'noaa-oar-arl/monet-stats'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,7 +19,7 @@ jobs:
       - uses: pre-commit/action@v3.0.1
 
   test:
-    needs: pre-commit
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:

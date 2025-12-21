@@ -7,12 +7,12 @@ and produce consistent results in realistic scenarios.
 
 import numpy as np
 
-from src.monet_stats.contingency_metrics import CSI, ETS, FAR, HSS, POD
-from src.monet_stats.correlation_metrics import IOA, KGE, R2, RMSE, pearsonr
-from src.monet_stats.efficiency_metrics import MAPE, MSE, NSE
-from src.monet_stats.error_metrics import MAE, MB
-from src.monet_stats.relative_metrics import NMB, NME
-from src.monet_stats.utils_stats import correlation
+from monet_stats.contingency_metrics import CSI, ETS, FAR, HSS, POD
+from monet_stats.correlation_metrics import IOA, KGE, R2, RMSE, pearsonr
+from monet_stats.efficiency_metrics import MAPE, MSE, NSE
+from monet_stats.error_metrics import MAE, MB
+from monet_stats.relative_metrics import NMB, NME
+from monet_stats.utils_stats import correlation
 
 
 class TestIntegration:
