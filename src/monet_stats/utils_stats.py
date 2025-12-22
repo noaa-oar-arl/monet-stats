@@ -105,8 +105,8 @@ def matchmasks(a1: ArrayLike, a2: ArrayLike) -> Tuple[Any, Any]:
     # Also consider NaNs as masked values.
     # Need to handle non-numeric data that would raise TypeError with np.isnan
     # Also, np.isnan on a masked array can be problematic, so get the data.
-    data1 = a1.data if hasattr(a1, 'data') else a1
-    data2 = a2.data if hasattr(a2, 'data') else a2
+    data1 = a1.data if hasattr(a1, "data") else a1
+    data2 = a2.data if hasattr(a2, "data") else a2
     try:
         nan_mask1 = np.isnan(data1)
         mask1 = mask1 | nan_mask1
@@ -117,7 +117,7 @@ def matchmasks(a1: ArrayLike, a2: ArrayLike) -> Tuple[Any, Any]:
         nan_mask2 = np.isnan(data2)
         mask2 = mask2 | nan_mask2
     except TypeError:
-        pass # Non-numeric data
+        pass  # Non-numeric data
 
     # Combine the masks
     combined_mask = mask1 | mask2

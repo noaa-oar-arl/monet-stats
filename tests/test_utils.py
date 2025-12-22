@@ -333,7 +333,7 @@ def test_matchmasks_dask_xarray_and_numpy():
     # boolean mask was not computed before being used in a numpy context.
 
     # Optional dependencies
-    dask = pytest.importorskip("dask")
+    pytest.importorskip("dask")
     xarray = pytest.importorskip("xarray")
 
     from monet_stats.utils_stats import matchmasks
@@ -356,16 +356,20 @@ def test_matchmasks_dask_xarray_and_numpy():
     np.testing.assert_array_equal(
         a1_masked.compressed(),
         expected_compressed,
-        err_msg="Dask xarray result is incorrect after masking."
+        err_msg="Dask xarray result is incorrect after masking.",
     )
     np.testing.assert_array_equal(
         a2_masked.compressed(),
         expected_compressed,
-        err_msg="Numpy array result is incorrect after masking."
+        err_msg="Numpy array result is incorrect after masking.",
     )
 
     # 5. Check the masks themselves
     # The mask should be True where either array had a NaN.
     expected_mask = np.array([False, True, True, False])
-    np.testing.assert_array_equal(a1_masked.mask, expected_mask, err_msg="Mask of dask xarray is incorrect.")
-    np.testing.assert_array_equal(a2_masked.mask, expected_mask, err_msg="Mask of numpy array is incorrect.")
+    np.testing.assert_array_equal(
+        a1_masked.mask, expected_mask, err_msg="Mask of dask xarray is incorrect."
+    )
+    np.testing.assert_array_equal(
+        a2_masked.mask, expected_mask, err_msg="Mask of numpy array is incorrect."
+    )
