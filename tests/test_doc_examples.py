@@ -1,6 +1,7 @@
 import doctest
 
 import pytest
+
 from monet_stats import (
     contingency_metrics,
     correlation_metrics,
@@ -34,6 +35,4 @@ def test_doctests(module):
     result = doctest.testmod(module, globs=globs, raise_on_error=True, verbose=True)
 
     # Check if any tests failed
-    assert (
-        result.failed == 0
-    ), f"Doctest failed in {module.__name__} with {result.failed} failures."
+    assert result.failed == 0, f"Doctest failed in {module.__name__} with {result.failed} failures."
