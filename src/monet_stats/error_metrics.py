@@ -2,7 +2,7 @@
 Error Metrics for Model Evaluation
 """
 
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import numpy as np
 import xarray as xr
@@ -119,34 +119,57 @@ def MNE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         return np.ma.masked_invalid(np.ma.abs(mod - obs) / obs).mean(axis=axis) * 100.0
 
 
-def MdnNB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
+def MdnNB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Union[float, xr.DataArray]:
     """
-    Median Normalized Bias (%)
+    Median Normalized Bias (MdnNB) in percent.
 
-    Typical Use Cases
-    -----------------
-    - Assessing the central tendency of model bias relative to observations, less sensitive to outliers than mean.
-    - Useful for robust model evaluation in the presence of skewed or non-normal error distributions.
+    This metric provides a robust measure of the central tendency of model
+    bias, normalized by the observation values. Being median-based, it is
+    less sensitive to outliers than the Mean Normalized Bias (MNB).
 
     Parameters
     ----------
-    obs : type
-        Description of parameter `obs`.
-    mod : type
-        Description of parameter `mod`.
-    axis : type
-        Description of parameter `axis`.
+    obs : array-like
+        Observed values.
+    mod : array-like
+        Model predicted values.
+    axis : int, optional
+        Axis along which to compute the median. If None, computes on flattened array.
 
     Returns
     -------
-    type
-        Description of returned object.
+    float or xarray.DataArray
+        The Median Normalized Bias, expressed as a percentage.
+        Returns 0.0 for a perfect model. Positive values indicate model
+        overestimation, negative values indicate underestimation.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> obs = np.array([10, 20, 30, 40, 50])
+    >>> mod = np.array([11, 22, 28, 43, 55])
+    >>> MdnNB(obs, mod)
+    5.0
+
+    Using xarray.DataArray:
+    >>> import xarray as xr
+    >>> obs_da = xr.DataArray(obs, dims=['time'], name='temperature')
+    >>> mod_da = xr.DataArray(mod, dims=['time'], name='temperature')
+    >>> result = MdnNB(obs_da, mod_da)
+    >>> print(result.item())
+    5.0
+    >>> print(result.attrs['history'])
+    Calculated MdnNB(%)
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
-        return ((mod - obs) / obs).median(dim=axis) * 100.0
+        # Mask where obs is zero to avoid division by zero, then calculate
+        normalized_bias = (mod - obs) / obs
+        result = normalized_bias.where(np.isfinite(normalized_bias)).median(dim=axis) * 100.0
+        result.attrs["history"] = "Calculated MdnNB(%)"
+        return result
     else:
+        # np.ma.masked_invalid will handle NaNs and Infs correctly
         return np.ma.median(np.ma.masked_invalid((mod - obs) / obs), axis=axis) * 100.0
 
 
