@@ -119,7 +119,9 @@ def MNE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         return np.ma.masked_invalid(np.ma.abs(mod - obs) / obs).mean(axis=axis) * 100.0
 
 
-def MdnNB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Union[float, xr.DataArray]:
+def MdnNB(
+    obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None
+) -> Union[float, xr.DataArray]:
     """
     Median Normalized Bias (MdnNB) in percent.
 
@@ -165,7 +167,9 @@ def MdnNB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Union[f
         obs, mod = xr.align(obs, mod, join="inner")
         # Mask where obs is zero to avoid division by zero, then calculate
         normalized_bias = (mod - obs) / obs
-        result = normalized_bias.where(np.isfinite(normalized_bias)).median(dim=axis) * 100.0
+        result = (
+            normalized_bias.where(np.isfinite(normalized_bias)).median(dim=axis) * 100.0
+        )
         result.attrs["history"] = "Calculated MdnNB(%)"
         return result
     else:

@@ -718,7 +718,9 @@ class TestErrorMetricsXarray:
         mod_xr = xr.DataArray([11, 21, 31.5, 42, 55], dims=["time"], name="mod")
         result = MdnNB(obs_xr, mod_xr)
         assert isinstance(result, xr.DataArray), "Result should be an xarray.DataArray"
-        assert np.isclose(result.item(), 5.0), f"Expected MdnNB=5.0, got {result.item()}"
+        assert np.isclose(
+            result.item(), 5.0
+        ), f"Expected MdnNB=5.0, got {result.item()}"
         assert (
             "history" in result.attrs
         ), "History attribute should be added for provenance"
@@ -733,4 +735,6 @@ class TestErrorMetricsXarray:
         result = MdnNB(obs_xr, mod_xr)
         expected = np.ma.median([10.0, -10.0, 10.0, 10.0])
         assert isinstance(result, xr.DataArray)
-        assert np.isclose(result.item(), expected), f"Expected MdnNB={expected}, got {result.item()}"
+        assert np.isclose(
+            result.item(), expected
+        ), f"Expected MdnNB={expected}, got {result.item()}"
