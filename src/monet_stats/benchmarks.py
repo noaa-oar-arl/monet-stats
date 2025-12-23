@@ -256,9 +256,7 @@ class AccuracyVerification:
         results["MAPE_known"] = {
             "computed": mape_result,
             "expected": expected_mape,
-            "passed": np.isclose(
-                mape_result, expected_mape, atol=0.1
-            ),  # Higher tolerance for MAPE
+            "passed": np.isclose(mape_result, expected_mape, atol=0.1),  # Higher tolerance for MAPE
         }
 
         return results

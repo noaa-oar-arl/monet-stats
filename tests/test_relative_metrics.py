@@ -115,9 +115,7 @@ class TestRelativeMetrics:
     def test_nmb_normalized_mean_bias(self) -> None:
         """Test NMB (Normalized Mean Bias)."""
         result = NMB(self.obs_perfect, self.mod_perfect)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement NMB should be 0%, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement NMB should be 0%, got {result}"
 
         # Test with known bias
         obs = np.array([10, 20, 30])
@@ -161,9 +159,7 @@ class TestRelativeMetrics:
     def test_nmdnb_normalized_median_bias(self) -> None:
         """Test NMdnB (Normalized Median Bias)."""
         result = NMdnB(self.obs_perfect, self.mod_perfect)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement NMdnB should be 0%, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement NMdnB should be 0%, got {result}"
 
         # Test with known median bias
         obs = np.array([10, 20, 30, 40, 50])
@@ -178,9 +174,7 @@ class TestRelativeMetrics:
     def test_fb_fractional_bias(self) -> None:
         """Test FB (Fractional Bias)."""
         result = FB(self.obs_perfect, self.mod_perfect)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement FB should be 0%, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement FB should be 0%, got {result}"
 
         # Test with known fractional bias
         obs = np.array([10, 20])
@@ -196,9 +190,7 @@ class TestRelativeMetrics:
     def test_me_mean_gross_error(self) -> None:
         """Test ME (Mean Gross Error)."""
         result = ME(self.obs_perfect, self.mod_perfect)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement ME should be 0, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement ME should be 0, got {result}"
 
         # Test with known error
         obs = np.array([10, 20, 30])
@@ -213,9 +205,7 @@ class TestRelativeMetrics:
     def test_mdne_median_gross_error(self) -> None:
         """Test MdnE (Median Gross Error)."""
         result = MdnE(self.obs_perfect, self.mod_perfect)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement MdnE should be 0, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement MdnE should be 0, got {result}"
 
         # Test with known median error
         obs = np.array([10, 20, 30])
@@ -263,40 +253,30 @@ class TestRelativeMetrics:
         result_abs = NME_m_ABS(self.obs_perfect, self.mod_perfect)
         result_std = NME(self.obs_perfect, self.mod_perfect)
 
-        assert np.isclose(
-            result_m, 0.0
-        ), f"Perfect agreement NME_m should be 0%, got {result_m}"
+        assert np.isclose(result_m, 0.0), f"Perfect agreement NME_m should be 0%, got {result_m}"
         assert np.isclose(
             result_abs, 0.0
         ), f"Perfect agreement NME_m_ABS should be 0%, got {result_abs}"
-        assert np.isclose(
-            result_std, 0.0
-        ), f"Perfect agreement NME should be 0%, got {result_std}"
+        assert np.isclose(result_std, 0.0), f"Perfect agreement NME should be 0%, got {result_std}"
 
     @pytest.mark.unit
     def test_nmdne_normalized_median_error(self) -> None:
         """Test NMdnE (Normalized Median Error)."""
         result = NMdnE(self.obs_perfect, self.mod_perfect)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement NMdnE should be 0%, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement NMdnE should be 0%, got {result}"
 
     @pytest.mark.unit
     def test_fe_fractional_error(self) -> None:
         """Test FE (Fractional Error)."""
         result = FE(self.obs_perfect, self.mod_perfect)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement FE should be 0%, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement FE should be 0%, got {result}"
 
         # Test with known fractional error
         obs = np.array([10, 20])
         mod = np.array([11, 22])  # 10% high bias
         result = FE(obs, mod)
         # FE = 2 * mean(abs(mod-obs)/(mod+obs)) * 100
-        expected = (
-            2 * np.mean([abs(11 - 10) / (11 + 10), abs(22 - 20) / (22 + 20)]) * 100
-        )
+        expected = 2 * np.mean([abs(11 - 10) / (11 + 10), abs(22 - 20) / (22 + 20)]) * 100
         assert np.isclose(
             result, expected
         ), f"FE calculation incorrect. Expected {expected}, got {result}"
@@ -305,9 +285,7 @@ class TestRelativeMetrics:
     def test_usutpb_unpaired_space_time_peak_bias(self) -> None:
         """Test USUTPB (Unpaired Space/Time Peak Bias)."""
         result = USUTPB(self.obs_2d, self.obs_2d)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement USUTPB should be 0%, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement USUTPB should be 0%, got {result}"
 
         # Test with known peak bias
         obs = np.array([1, 2, 3, 4])
@@ -322,9 +300,7 @@ class TestRelativeMetrics:
     def test_usutpe_unpaired_space_time_peak_error(self) -> None:
         """Test USUTPE (Unpaired Space/Time Peak Error)."""
         result = USUTPE(self.obs_2d, self.obs_2d)
-        assert np.isclose(
-            result, 0.0
-        ), f"Perfect agreement USUTPE should be 0%, got {result}"
+        assert np.isclose(result, 0.0), f"Perfect agreement USUTPE should be 0%, got {result}"
 
         # Test with known peak error
         obs = np.array([1, 2, 3, 4])
@@ -422,9 +398,7 @@ class TestRelativeMetrics:
             result, (float, np.floating, xr.DataArray)
         ), f"MNPB should work with 2D xarray inputs, got {type(result)}"
 
-    @pytest.mark.parametrize(
-        "metric_func", [NMB, NMB_ABS, NMdnB, FB, ME, MdnE, NME, NMdnE, FE]
-    )
+    @pytest.mark.parametrize("metric_func", [NMB, NMB_ABS, NMdnB, FB, ME, MdnE, NME, NMdnE, FE])
     def test_relative_metrics_output_type(self, metric_func) -> None:
         """Test that relative metrics return appropriate values."""
         result = metric_func(self.obs_random, self.mod_random)
@@ -440,15 +414,11 @@ class TestRelativeMetrics:
         diff = angles_cross[1] - angles_cross[0]  # 10 - 350 = -340
         result_cross = circlebias(diff)
         # circlebias should convert -340 to 20 (going the other way around the circle)
-        assert (
-            result_cross == 20
-        ), f"circlebias should handle 0/360 crossing, got {result_cross}"
+        assert result_cross == 20, f"circlebias should handle 0/360 crossing, got {result_cross}"
 
         # Test circlebias_m function
         result_m = circlebias_m(diff)
-        assert (
-            result_m == 20
-        ), f"circlebias_m should handle 0/360 crossing, got {result_m}"
+        assert result_m == 20, f"circlebias_m should handle 0/360 crossing, got {result_m}"
 
     @pytest.mark.unit
     def test_zero_division_handling(self) -> None:
@@ -495,9 +465,7 @@ class TestRelativeMetrics:
         elapsed_time = time.time() - start_time
 
         # Should complete in reasonable time (less than 2 seconds)
-        assert (
-            elapsed_time < 2.0
-        ), f"Performance test took too long: {elapsed_time:.3f}s"
+        assert elapsed_time < 2.0, f"Performance test took too long: {elapsed_time:.3f}s"
 
         # Results should be valid
         assert isinstance(nmb_result, (float, np.floating))
@@ -534,9 +502,7 @@ class TestRelativeMetricsHypothesis:
         arrays(
             np.float64,
             10,
-            elements=st.floats(
-                min_value=1, max_value=100, allow_nan=False, allow_infinity=False
-            ),
+            elements=st.floats(min_value=1, max_value=100, allow_nan=False, allow_infinity=False),
         )
     )
     def test_nmb_zero_for_identical_arrays(self, data) -> None:
@@ -551,16 +517,12 @@ class TestRelativeMetricsHypothesis:
         arrays(
             np.float64,
             10,
-            elements=st.floats(
-                min_value=0.1, max_value=100, allow_nan=False, allow_infinity=False
-            ),
+            elements=st.floats(min_value=0.1, max_value=100, allow_nan=False, allow_infinity=False),
         ),
         arrays(
             np.float64,
             10,
-            elements=st.floats(
-                min_value=0.1, max_value=100, allow_nan=False, allow_infinity=False
-            ),
+            elements=st.floats(min_value=0.1, max_value=100, allow_nan=False, allow_infinity=False),
         ),
     )
     def test_me_non_negative_property(self, obs, mod) -> None:
@@ -573,16 +535,12 @@ class TestRelativeMetricsHypothesis:
         arrays(
             np.float64,
             5,
-            elements=st.floats(
-                min_value=1, max_value=100, allow_nan=False, allow_infinity=False
-            ),
+            elements=st.floats(min_value=1, max_value=100, allow_nan=False, allow_infinity=False),
         ),
         arrays(
             np.float64,
             5,
-            elements=st.floats(
-                min_value=1, max_value=100, allow_nan=False, allow_infinity=False
-            ),
+            elements=st.floats(min_value=1, max_value=100, allow_nan=False, allow_infinity=False),
         ),
     )
     def test_nme_me_relationship_property(self, obs, mod) -> None:
@@ -682,9 +640,7 @@ class TestRelativeMetricsEdgeCases:
         memory_increase = memory_after - memory_before
 
         # Memory increase should be reasonable (less than 100MB)
-        assert (
-            memory_increase < 100
-        ), f"Memory increase too large: {memory_increase:.1f}MB"
+        assert memory_increase < 100, f"Memory increase too large: {memory_increase:.1f}MB"
 
         # Results should be valid
         assert isinstance(nmb_result, (float, np.floating))
