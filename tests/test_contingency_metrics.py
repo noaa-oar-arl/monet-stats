@@ -93,7 +93,9 @@ class TestContingencyMetrics:
     def test_fbi_perfect_bias(self) -> None:
         """Test frequency bias with perfect agreement."""
         result = FBI(self.obs_perfect, self.mod_perfect, minval=0.5)
-        assert abs(result - 1.0) < 1e-10, f"Perfect agreement should give bias=1.0, got {result}"
+        assert abs(result - 1.0) < 1e-10, (
+            f"Perfect agreement should give bias=1.0, got {result}"
+        )
 
     def test_fbi_overprediction(self) -> None:
         """Test frequency bias with overprediction."""
@@ -136,9 +138,9 @@ class TestContingencyMetrics:
         """Test that probability-based metrics are in [0, 1] range."""
         result = metric_func(self.obs_test, self.mod_test, minval=0.5)
         min_val, max_val = expected_range
-        assert (
-            min_val <= result <= max_val
-        ), f"{metric_func.__name__} should be in {expected_range}, got {result}"
+        assert min_val <= result <= max_val, (
+            f"{metric_func.__name__} should be in {expected_range}, got {result}"
+        )
 
     def test_edge_case_empty_arrays(self) -> None:
         """Test behavior with empty arrays."""
@@ -160,7 +162,9 @@ class TestContingencyMetrics:
 
         # POD with no events should be undefined (NaN or exception)
         result = POD(obs_zeros, mod_zeros, minval=0.5)
-        assert np.isnan(result) or result == 0.0, "POD with no events should be NaN or 0"
+        assert np.isnan(result) or result == 0.0, (
+            "POD with no events should be NaN or 0"
+        )
 
     def test_edge_case_all_ones(self) -> None:
         """Test behavior with all one arrays."""
@@ -184,7 +188,9 @@ class TestContingencyMetrics:
 
         # Create data that produces these contingency values
         obs = np.array([1] * (hits + misses) + [0] * (false_alarms + correct_negatives))
-        mod = np.array([1] * hits + [0] * misses + [1] * false_alarms + [0] * correct_negatives)
+        mod = np.array(
+            [1] * hits + [0] * misses + [1] * false_alarms + [0] * correct_negatives
+        )
 
         # Test calculations
         assert abs(POD(obs, mod, minval=0.5) - expected_pod) < 1e-10
@@ -220,7 +226,9 @@ class TestContingencyMetrics:
         obs = np.array([1, 0, 1, 0])
         mod = np.array([0, 1, 0, 1])
         result = BSS_binary(obs, mod, threshold=0.5)
-        assert result < 0, f"Opposite predictions should give negative BSS, got {result}"
+        assert result < 0, (
+            f"Opposite predictions should give negative BSS, got {result}"
+        )
 
     def test_scores_function(self) -> None:
         """Test the scores function that returns contingency table values."""

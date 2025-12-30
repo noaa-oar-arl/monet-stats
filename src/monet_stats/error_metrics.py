@@ -85,7 +85,9 @@ def MNB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
-        return ((mod - obs) / obs).mean(dim=obs.dims[axis] if axis is not None else None) * 100.0
+        return ((mod - obs) / obs).mean(
+            dim=obs.dims[axis] if axis is not None else None
+        ) * 100.0
     else:
         return np.ma.masked_invalid((mod - obs) / obs).mean(axis=axis) * 100.0
 
@@ -110,12 +112,16 @@ def MNE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
-        return (abs(mod - obs) / obs).mean(dim=obs.dims[axis] if axis is not None else None) * 100.0
+        return (abs(mod - obs) / obs).mean(
+            dim=obs.dims[axis] if axis is not None else None
+        ) * 100.0
     else:
         return np.ma.masked_invalid(np.ma.abs(mod - obs) / obs).mean(axis=axis) * 100.0
 
 
-def MdnNB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Union[float, xr.DataArray]:
+def MdnNB(
+    obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None
+) -> Union[float, xr.DataArray]:
     """
     Median Normalized Bias (MdnNB) in percent.
 
@@ -161,7 +167,9 @@ def MdnNB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Union[f
         obs, mod = xr.align(obs, mod, join="inner")
         # Mask where obs is zero to avoid division by zero, then calculate
         normalized_bias = (mod - obs) / obs
-        result = normalized_bias.where(np.isfinite(normalized_bias)).median(dim=axis) * 100.0
+        result = (
+            normalized_bias.where(np.isfinite(normalized_bias)).median(dim=axis) * 100.0
+        )
         result.attrs["history"] = "Calculated MdnNB(%)"
         return result
     else:
@@ -197,7 +205,10 @@ def MdnNE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         obs, mod = xr.align(obs, mod, join="inner")
         return (abs(mod - obs) / obs).median(dim=axis) * 100.0
     else:
-        return np.ma.median(np.ma.masked_invalid(np.ma.abs(mod - obs) / obs), axis=axis) * 100.0
+        return (
+            np.ma.median(np.ma.masked_invalid(np.ma.abs(mod - obs) / obs), axis=axis)
+            * 100.0
+        )
 
 
 def NMdnGE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
@@ -229,7 +240,10 @@ def NMdnGE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         return (abs(mod - obs).mean(dim=axis) / obs.mean(dim=axis)) * 100.0
     else:
         return (
-            np.ma.masked_invalid(np.ma.abs(mod - obs).mean(axis=axis) / obs.mean(axis=axis)) * 100.0
+            np.ma.masked_invalid(
+                np.ma.abs(mod - obs).mean(axis=axis) / obs.mean(axis=axis)
+            )
+            * 100.0
         )
 
 
@@ -362,7 +376,11 @@ def MO(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (obs - mod).mean(dim=axis)
     else:
@@ -440,7 +458,11 @@ def MdnO(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (obs - mod).median(dim=axis)
     else:
@@ -472,7 +494,11 @@ def MdnP(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (mod - obs).median(dim=axis)
     else:
@@ -504,7 +530,11 @@ def RM(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return np.sqrt(((obs - mod) ** 2).mean(dim=axis))
     else:
@@ -561,7 +591,11 @@ def MB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (obs - mod).mean(dim=axis)
     elif hasattr(mod, "mean") and hasattr(obs, "mean"):
@@ -593,7 +627,11 @@ def MdnB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (obs - mod).median(dim=axis)
     elif hasattr(mod, "median") and hasattr(obs, "median"):
@@ -627,7 +665,11 @@ def WDMB_m(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         if axis is not None:
             dim = obs.dims[axis] if isinstance(axis, int) else axis
@@ -665,7 +707,11 @@ def WDMB(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         if axis is not None:
             dim = obs.dims[axis] if isinstance(axis, int) else axis
@@ -700,7 +746,11 @@ def WDMdnB(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         if axis is not None:
             dim = obs.dims[axis] if isinstance(axis, int) else axis
@@ -749,7 +799,11 @@ def MAE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return abs(mod - obs).mean(dim=axis)
     else:
@@ -794,7 +848,11 @@ def MedAE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return abs(mod - obs).median(dim=axis)
     else:
@@ -837,11 +895,17 @@ def sMAPE_original(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (200 * abs(mod - obs) / (abs(mod) + abs(obs))).mean(dim=axis)
     else:
-        return (200 * np.ma.abs(mod - obs) / (np.ma.abs(mod) + np.ma.abs(obs))).mean(axis=axis)
+        return (200 * np.ma.abs(mod - obs) / (np.ma.abs(mod) + np.ma.abs(obs))).mean(
+            axis=axis
+        )
 
 
 def CRMSE(obs, mod, axis=None):
@@ -880,7 +944,11 @@ def CRMSE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         o_ = obs - obs.mean(dim=axis)
         m_ = mod - mod.mean(dim=axis)
@@ -927,7 +995,11 @@ def MAPE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (100 * abs(mod - obs) / abs(obs)).mean(dim=axis)
     else:
@@ -970,11 +1042,17 @@ def sMAPE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (200 * abs(mod - obs) / (abs(mod) + abs(obs))).mean(dim=axis)
     else:
-        return (200 * np.ma.abs(mod - obs) / (np.ma.abs(mod) + np.ma.abs(obs))).mean(axis=axis)
+        return (200 * np.ma.abs(mod - obs) / (np.ma.abs(mod) + np.ma.abs(obs))).mean(
+            axis=axis
+        )
 
 
 def NRMSE(obs, mod, axis=None):
@@ -1014,7 +1092,11 @@ def NRMSE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         rmse = ((mod - obs) ** 2).mean(dim=axis) ** 0.5
         obs_range = obs.max(dim=axis) - obs.min(dim=axis)
@@ -1067,7 +1149,11 @@ def MASE(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         # Calculate naive forecast error (using previous observation)
         naive_error = abs(obs - obs.shift(time=1)).mean(dim=axis, skipna=True)
@@ -1122,7 +1208,11 @@ def MASEm(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         # Calculate naive forecast error (using previous observation)
         naive_error = abs(obs - obs.shift(time=1)).mean(dim=axis, skipna=True)
@@ -1177,7 +1267,11 @@ def RMSPE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (100 * ((mod - obs) / obs) ** 2).mean(dim=axis) ** 0.5
     else:
@@ -1220,7 +1314,11 @@ def MAPEm(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (100 * abs((mod - obs) / obs)).mean(dim=axis)
     else:
@@ -1263,11 +1361,17 @@ def sMAPEm(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return (200 * abs(mod - obs) / (abs(mod) + abs(obs))).mean(dim=axis)
     else:
-        return 200 * np.ma.mean(np.ma.abs(mod - obs) / (np.ma.abs(mod) + np.ma.abs(obs)), axis=axis)
+        return 200 * np.ma.mean(
+            np.ma.abs(mod - obs) / (np.ma.abs(mod) + np.ma.abs(obs)), axis=axis
+        )
 
 
 def NSC(obs, mod, axis=None):
@@ -1306,7 +1410,11 @@ def NSC(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         obs_mean = obs.mean(dim=axis)
         numerator = ((obs - mod) ** 2).sum(dim=axis)
@@ -1355,7 +1463,11 @@ def NSE_alpha(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return mod.std(dim=axis) / obs.std(dim=axis)
     else:
@@ -1398,7 +1510,11 @@ def NSE_beta(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return mod.mean(dim=axis) / obs.mean(dim=axis)
     else:
@@ -1441,7 +1557,11 @@ def MAE_m(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return abs(mod - obs).mean(dim=axis)
     else:
@@ -1484,7 +1604,11 @@ def MedAE_m(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return abs(mod - obs).median(dim=axis)
     else:
@@ -1527,7 +1651,11 @@ def RMSE(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return ((mod - obs) ** 2).mean(dim=axis) ** 0.5
     else:
@@ -1573,7 +1701,11 @@ def RMSE_m(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         return ((mod - obs) ** 2).mean(dim=axis) ** 0.5
     else:
@@ -1616,7 +1748,11 @@ def IOA(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         obs_mean = obs.mean(dim=axis)
         num = ((obs - mod) ** 2).sum(dim=axis)
@@ -1625,7 +1761,9 @@ def IOA(obs, mod, axis=None):
     else:
         obs_mean = np.mean(obs, axis=axis)
         num = np.sum((obs - mod) ** 2, axis=axis)
-        denom = np.sum((np.abs(mod - obs_mean) + np.abs(obs - obs_mean)) ** 2, axis=axis)
+        denom = np.sum(
+            (np.abs(mod - obs_mean) + np.abs(obs - obs_mean)) ** 2, axis=axis
+        )
         return 1.0 - (num / denom)
 
 
@@ -1665,7 +1803,11 @@ def IOA_m(obs, mod, axis=None):
         import xarray as xr
     except ImportError:
         xr = None
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         obs_mean = obs.mean(dim=axis)
         num = ((obs - mod) ** 2).sum(dim=axis)
@@ -1674,7 +1816,9 @@ def IOA_m(obs, mod, axis=None):
     else:
         obs_mean = np.ma.mean(obs, axis=axis)
         num = np.ma.sum((obs - mod) ** 2, axis=axis)
-        denom = np.ma.sum((np.ma.abs(mod - obs_mean) + np.ma.abs(obs - obs_mean)) ** 2, axis=axis)
+        denom = np.ma.sum(
+            (np.ma.abs(mod - obs_mean) + np.ma.abs(obs - obs_mean)) ** 2, axis=axis
+        )
         return 1.0 - (num / denom)
 
 
@@ -1710,7 +1854,11 @@ def MAPE_mod(obs, mod, axis=None):
     # Small epsilon to avoid division by zero
     epsilon = 1e-8
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         # Add epsilon to avoid division by zero
         obs_safe = xr.where(np.abs(obs) < epsilon, epsilon, obs)
@@ -1747,7 +1895,11 @@ def MASE_mod(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         # Calculate naive forecast error (using previous observation)
         naive_error = abs(obs - obs.shift(time=1)).mean(dim=axis, skipna=True)
@@ -1792,7 +1944,11 @@ def RMSE_norm(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         rmse = ((mod - obs) ** 2).mean(dim=axis) ** 0.5
         obs_min = obs.min(dim=axis)
@@ -1834,7 +1990,11 @@ def MAE_norm(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         mae = abs(mod - obs).mean(dim=axis)
         obs_min = obs.min(dim=axis)
@@ -1876,7 +2036,11 @@ def bias_fraction(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         bias = (mod - obs).mean(dim=axis)
         total_error = np.sqrt(((mod - obs) ** 2).mean(dim=axis))
@@ -1930,7 +2094,11 @@ def NMSE(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         mse = ((mod - obs) ** 2).mean(dim=axis)
         obs_var = obs.var(dim=axis)
@@ -1984,7 +2152,11 @@ def LOG_ERROR(obs, mod, axis=None):
     # Add small epsilon to avoid log(0) and handle negative values
     epsilon = 1e-10
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         # Use abs to handle potential negative values, then add epsilon
         obs_safe = np.abs(obs) + epsilon
@@ -2051,7 +2223,11 @@ def COE(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         # For simplicity, returning RMSE for xarray case
         return ((mod - obs) ** 2).mean(dim=axis) ** 0.5
@@ -2100,7 +2276,11 @@ def VOLUMETRIC_ERROR(obs, mod, axis=None):
     except ImportError:
         xr = None
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         obs_sum = obs.sum(dim=axis)
         mod_sum = mod.sum(dim=axis)
@@ -2151,7 +2331,11 @@ def CORR_INDEX(obs, mod, axis=None):
 
     from scipy.stats import pearsonr
 
-    if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+    if (
+        xr is not None
+        and isinstance(obs, xr.DataArray)
+        and isinstance(mod, xr.DataArray)
+    ):
         obs, mod = xr.align(obs, mod, join="inner")
         # Using xarray's built-in correlation function
         return xr.corr(obs, mod, dim=axis)

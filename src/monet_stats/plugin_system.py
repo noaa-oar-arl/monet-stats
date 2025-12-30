@@ -197,7 +197,11 @@ class CustomMetric(PluginInterface):
         except ImportError:
             xr = None
 
-        if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+        if (
+            xr is not None
+            and isinstance(obs, xr.DataArray)
+            and isinstance(mod, xr.DataArray)
+        ):
             obs, mod = xr.align(obs, mod, join="inner")
             return self._func(obs, mod, **kwargs)
         else:
@@ -242,7 +246,11 @@ class ExampleMetrics:
             except ImportError:
                 xr = None
 
-            if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+            if (
+                xr is not None
+                and isinstance(obs, xr.DataArray)
+                and isinstance(mod, xr.DataArray)
+            ):
                 obs, mod = xr.align(obs, mod, join="inner")
                 numerator = (abs(mod - obs)).sum(dim=axis)
                 denominator = (abs(obs)).sum(dim=axis)
@@ -268,10 +276,18 @@ class ExampleMetrics:
             except ImportError:
                 xr = None
 
-            if xr is not None and isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
+            if (
+                xr is not None
+                and isinstance(obs, xr.DataArray)
+                and isinstance(mod, xr.DataArray)
+            ):
                 obs, mod = xr.align(obs, mod, join="inner")
-                positive_errors = ((mod >= obs) * abs(mod - obs) / abs(obs)).mean(dim=axis)
-                negative_errors = ((mod < obs) * abs(mod - obs) / abs(obs)).mean(dim=axis)
+                positive_errors = ((mod >= obs) * abs(mod - obs) / abs(obs)).mean(
+                    dim=axis
+                )
+                negative_errors = ((mod < obs) * abs(mod - obs) / abs(obs)).mean(
+                    dim=axis
+                )
                 return positive_errors - negative_errors
             else:
                 positive_mask = mod >= obs

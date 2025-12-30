@@ -64,7 +64,9 @@ def align_arrays(
         mod = to_numpy(mod)
 
         if obs.shape != mod.shape:
-            raise ValueError(f"Arrays must have the same shape, got {obs.shape} and {mod.shape}")
+            raise ValueError(
+                f"Arrays must have the same shape, got {obs.shape} and {mod.shape}"
+            )
 
         return obs, mod
 
@@ -220,8 +222,12 @@ def detrend_data(
             obs_detrended = detrend(obs_np, axis=-1)
             mod_detrended = detrend(mod_np, axis=-1)
             # Convert back to xarray if original was xarray
-            obs_detrended = xr.DataArray(obs_detrended, coords=obs.coords, dims=obs.dims)
-            mod_detrended = xr.DataArray(mod_detrended, coords=mod.coords, dims=mod.dims)
+            obs_detrended = xr.DataArray(
+                obs_detrended, coords=obs.coords, dims=obs.dims
+            )
+            mod_detrended = xr.DataArray(
+                mod_detrended, coords=mod.coords, dims=mod.dims
+            )
         else:
             from scipy.signal import detrend
 
