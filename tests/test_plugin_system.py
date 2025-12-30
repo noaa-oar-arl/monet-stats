@@ -1,7 +1,6 @@
 """Tests for the `plugin_system` module."""
 
 import numpy as np
-
 from monet_stats import plugin_system
 
 
