@@ -86,3 +86,62 @@ class TestDataProcessing:
         mod = np.array([1, 2, 3, 4, 5])
         obs_anom, _ = compute_anomalies(obs, mod)
         assert np.isclose(np.mean(obs_anom), 0)
+
+    def test_normalize_data_minmax(self) -> None:
+        """Test that normalize_data handles minmax normalization."""
+        obs = np.array([1, 2, 3, 4, 5])
+        mod = np.array([2, 3, 4, 5, 6])
+        obs_norm, mod_norm = normalize_data(obs, mod, method="minmax")
+        assert np.isclose(np.min(obs_norm), 0)
+        assert np.isclose(np.max(obs_norm), 1)
+        assert np.isclose(np.min(mod_norm), 0)
+        assert np.isclose(np.max(mod_norm), 1)
+
+    def test_normalize_data_robust(self) -> None:
+        """Test that normalize_data handles robust normalization."""
+        obs = np.array([1, 2, 3, 4, 5])
+        mod = np.array([2, 3, 4, 5, 6])
+        obs_norm, mod_norm = normalize_data(obs, mod, method="robust")
+        assert np.isclose(np.median(obs_norm), 0)
+        assert np.isclose(np.median(mod_norm), 0)
+
+    def test_normalize_data_invalid_method(self) -> None:
+        """Test that normalize_data raises on invalid method."""
+        obs = np.array([1, 2, 3])
+        mod = np.array([1, 2, 3])
+        try:
+            normalize_data(obs, mod, method="invalid")
+        except ValueError as e:
+            assert "Unknown normalization method" in str(e)
+        else:
+            assert False, "Expected ValueError for invalid normalization method"
+
+    def test_handle_missing_values_listwise(self) -> None:
+        """Test handle_missing_values with 'listwise' strategy."""
+        obs = np.array([1, 2, np.nan, 4])
+        mod = np.array([5, np.nan, 7, 8])
+        obs_clean, mod_clean = handle_missing_values(obs, mod, strategy="listwise")
+        assert len(obs_clean) == 2
+        assert len(mod_clean) == 2
+
+    def test_handle_missing_values_invalid_strategy(self) -> None:
+        """Test handle_missing_values raises on invalid strategy."""
+        obs = np.array([1, 2, 3])
+        mod = np.array([4, 5, 6])
+        try:
+            handle_missing_values(obs, mod, strategy="invalid")
+        except ValueError as e:
+            assert "Unknown strategy" in str(e)
+        else:
+            assert False, "Expected ValueError for invalid strategy"
+
+    def test_align_arrays_shape_mismatch(self) -> None:
+        """Test align_arrays raises on shape mismatch for numpy arrays."""
+        obs = np.array([1, 2, 3])
+        mod = np.array([4, 5])
+        try:
+            align_arrays(obs, mod)
+        except ValueError as e:
+            assert "Arrays must have the same shape" in str(e)
+        else:
+            assert False, "Expected ValueError for shape mismatch"

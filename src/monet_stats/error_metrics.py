@@ -247,7 +247,7 @@ def NMdnGE(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
         )
 
 
-def NO(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
+def NO(obs: ArrayLike, mod: ArrayLike, axis: Optional[Union[int, str]] = None) -> Any:
     """
     N Observations (#)
 
@@ -272,12 +272,23 @@ def NO(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
 
     """
     if isinstance(obs, xr.DataArray):
-        return obs.count(dim=axis)
+        result = obs.count(dim=axis)
+        if hasattr(result, 'size') and result.size == 0:
+            return 0
+        return int(result) if np.isscalar(result) else result
     else:
-        return (~np.ma.getmaskarray(obs)).sum(axis=axis)
+        arr = np.asanyarray(obs)
+        mod_arr = np.asanyarray(mod)
+        if arr.shape != mod_arr.shape:
+            raise ValueError(f"Shape mismatch: obs.shape={arr.shape}, mod.shape={mod_arr.shape}")
+        mask = np.ma.getmaskarray(arr) | np.isnan(arr)
+        count = (~mask).sum(axis=axis)
+        if np.ma.isMaskedArray(count):
+            count = count.filled(0)
+        return int(count) if np.isscalar(count) else count
 
 
-def NOP(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
+def NOP(obs: ArrayLike, mod: ArrayLike, axis: Optional[Union[int, str]] = None) -> Any:
     """
     N Observations/Prediction Pairs (#)
 
@@ -303,13 +314,25 @@ def NOP(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
-        return obs.count(dim=axis)
+        result = obs.count(dim=axis)
+        if hasattr(result, 'size') and result.size == 0:
+            return 0
+        return int(result) if np.isscalar(result) else result
     else:
+        arr = np.asanyarray(obs)
+        mod_arr = np.asanyarray(mod)
+        if arr.shape != mod_arr.shape:
+            raise ValueError(f"Shape mismatch: obs.shape={arr.shape}, mod.shape={mod_arr.shape}")
         obsc, modc = matchmasks(obs, mod)
-        return (~np.ma.getmaskarray(obsc)).sum(axis=axis)
+        arr = np.asanyarray(obsc)
+        mask = np.ma.getmaskarray(arr) | np.isnan(arr) | np.isnan(np.asanyarray(modc))
+        count = (~mask).sum(axis=axis)
+        if np.ma.isMaskedArray(count):
+            count = count.filled(0)
+        return int(count) if np.isscalar(count) else count
 
 
-def NP(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
+def NP(obs: ArrayLike, mod: ArrayLike, axis: Optional[Union[int, str]] = None) -> Any:
     """
     N Predictions (#)
 
@@ -334,9 +357,20 @@ def NP(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
 
     """
     if isinstance(mod, xr.DataArray):
-        return mod.count(dim=axis)
+        result = mod.count(dim=axis)
+        if hasattr(result, 'size') and result.size == 0:
+            return 0
+        return int(result) if np.isscalar(result) else result
     else:
-        return (~np.ma.getmaskarray(mod)).sum(axis=axis)
+        arr = np.asanyarray(mod)
+        obs_arr = np.asanyarray(obs)
+        if arr.shape != obs_arr.shape:
+            raise ValueError(f"Shape mismatch: mod.shape={arr.shape}, obs.shape={obs_arr.shape}")
+        mask = np.ma.getmaskarray(arr) | np.isnan(arr)
+        count = (~mask).sum(axis=axis)
+        if np.ma.isMaskedArray(count):
+            count = count.filled(0)
+        return int(count) if np.isscalar(count) else count
 
 
 def MO(obs: ArrayLike, mod: ArrayLike, axis: Optional[int] = None) -> Any:
