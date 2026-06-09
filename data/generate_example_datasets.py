@@ -173,7 +173,7 @@ def generate_wind_data(n_years: int = 5, n_stations: int = 5) -> Dict[str, Any]:
     """Generate synthetic wind data with direction and speed."""
     start_date = datetime(2015, 1, 1)
     end_date = datetime(2015 + n_years, 1, 1)
-    dates = pd.date_range(start=start_date, end=end_date, freq="H")  # Hourly data
+    dates = pd.date_range(start=start_date, end=end_date, freq="h")  # Hourly data
     n_hours = len(dates)
 
     station_ids = [f"STN{i:03d}" for i in range(1, n_stations + 1)]
