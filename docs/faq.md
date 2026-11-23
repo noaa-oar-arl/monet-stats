@@ -31,14 +31,11 @@ pip install -e .
 ### Q: I need additional dependencies like xarray or pandas
 
 **A:** NumPy, pandas, SciPy, and xarray are installed automatically as core
-dependencies. Install the optional extras for additional backends or tooling:
+dependencies. Install the optional extras for lazy computation or tooling:
 
 ```bash
 # Install with Dask support (lazy/parallel computation)
 pip install "monet-stats[dask]"
-
-# Install with Cubed support
-pip install "monet-stats[cubed]"
 
 # Install with all development and test dependencies
 pip install "monet-stats[dev,test]"

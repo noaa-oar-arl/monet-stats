@@ -616,3 +616,14 @@ class TestCorrelationMetricsXarray:
         mask00 = ~np.isnan(obs[:, 0, 0]) & ~np.isnan(mod[:, 0, 0])
         expected00 = scipy_pearson(obs[mask00, 0, 0], mod[mask00, 0, 0])[0]
         assert np.allclose(res[0, 0], expected00)
+
+
+def test_climatology_relative_ac_uses_weights_and_shared_support():
+    from monet_stats.correlation_metrics import anomaly_correlation
+
+    obs = xr.DataArray([11.0, 22.0, 99.0], dims="cell")
+    mod = xr.DataArray([12.0, 21.0, 22.0], dims="cell")
+    clim = xr.DataArray([10.0, 20.0, np.nan], dims="cell")
+    weights = xr.DataArray([1.0, 2.0, 3.0], dims="cell")
+    result = anomaly_correlation(obs, mod, clim, dim="cell", weights=weights)
+    np.testing.assert_allclose(result, 6 / np.sqrt(9 * 6))

@@ -586,3 +586,23 @@ Where $\bar{O}_c$ is the circular mean of observations.
 - Gupta, H.V., et al. (2009). Decomposition of the mean squared error and NSE criteria: Implications for improving hydrological modelling. Journal of Hydrology, 377(1-2), 80-91.
 - Potts, J.M., et al. (1996). A simple, objective method for partitioning variance in model performance evaluation. American Meteorological Society, 29(2), 202-215.
 - Hersbach, H. (2000). Decomposition of the continuous ranked probability score for ensemble prediction systems. Weather and Forecasting, 15(5), 559-570.
+
+## Common support and diagnostic conventions
+
+Scorecard bias and centered error are calculated from the same finite
+observation–model pairs. With weights, centered RMSE is the weighted
+standard deviation of paired errors. Observation coverage and weight
+coverage are available separately.
+
+Anomaly correlation can use an explicit common climatology. Its default
+uncentered form divides the weighted sum of anomaly cross-products by
+the geometric mean of the weighted sums of squared anomalies. MSE skill
+and CRPS skill divide the aggregate forecast error by aggregate reference
+error before subtracting from one, using the same valid samples and
+weights for both aggregates. A zero reference error gives NaN.
+
+Probabilistic Brier skill uses the forecast probability directly. Fair
+CRPS uses the number of distinct ordered member pairs, M(M−1), in the
+ensemble spread term. A rank tie contributes equally to each admissible
+rank. For these ensemble calculations a case with an incomplete ensemble
+is excluded.

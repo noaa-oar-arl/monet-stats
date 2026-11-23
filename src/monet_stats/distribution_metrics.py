@@ -661,3 +661,18 @@ def MutualInformation(
     m_flat = m_rolled.reshape(-1, m_rolled.shape[-1])
     results = np.array([_wrapper(o, m) for o, m in zip(o_flat, m_flat)])
     return results.reshape(shape_other) if shape_other else results.item()
+
+
+def quantile_bias(obs: xr.DataArray, mod: xr.DataArray, *, q=0.5, dim=None) -> xr.DataArray:
+    """Subtract observation quantiles from forecast quantiles on matched samples.
+
+    Exact quantiles require rechunking the reduced dimensions for Dask inputs.
+    """
+    from .utils_stats import _finite_pairs
+
+    dims = _resolve_axis_to_dim(obs, dim)
+    obs, mod = _finite_pairs(obs, mod)
+    obs = ensure_single_chunk(obs, dims)
+    mod = ensure_single_chunk(mod, dims)
+    result = mod.quantile(q, dim=dims, skipna=True) - obs.quantile(q, dim=dims, skipna=True)
+    return _update_history(result, "Quantile bias")

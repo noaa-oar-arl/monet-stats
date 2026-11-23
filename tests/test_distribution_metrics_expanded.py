@@ -111,3 +111,13 @@ def test_multi_dim_numpy():
 
 if __name__ == "__main__":
     pytest.main([__file__])
+
+
+def test_quantile_bias_uses_a_matched_sample():
+    from monet_stats.distribution_metrics import quantile_bias
+
+    obs = xr.DataArray([0.0, 2.0, 100.0], dims="time")
+    mod = xr.DataArray([3.0, 5.0, np.nan], dims="time")
+    result = quantile_bias(obs, mod, q=[0.5, 0.95], dim="time")
+    assert result.dims == ("quantile",)
+    np.testing.assert_allclose(result, [3, 3])

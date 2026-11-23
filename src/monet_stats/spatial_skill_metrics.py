@@ -29,6 +29,33 @@ def _uniform_filter(data: np.ndarray, window_size: int) -> np.ndarray:
     return uniform_filter(data.astype(float), size=window_size)
 
 
+def _window_fractions(obs, mod, dims, size, threshold, boundary, min_coverage):
+    if boundary not in ("valid", "periodic"):
+        raise ValueError("boundary must be 'valid' or 'periodic'.")
+    if size < 1 or not 0 < min_coverage <= 1:
+        raise ValueError("Require a positive window size and 0 < min_coverage <= 1.")
+    if not dims or len(set(dims)) != len(dims):
+        raise ValueError("Supply distinct spatial dimensions.")
+    obs, mod = xr.align(obs, mod, join="inner", copy=False)
+    valid = np.isfinite(obs) & np.isfinite(mod)
+    if threshold is None:
+        threshold = obs.where(valid).mean(dims)
+    event_obs = (obs >= threshold) & valid
+    event_mod = (mod >= threshold) & valid
+    fields = xr.Dataset({"obs": event_obs, "mod": event_mod, "valid": valid})
+    left = size // 2
+    right = size - 1 - left
+    if boundary == "periodic":
+        longitude = dims[-1]
+        fields = fields.pad({longitude: (left, right)}, mode="wrap")
+    windows = dict.fromkeys(dims, size)
+    totals = fields.rolling(windows, center=True).sum()
+    if boundary == "periodic":
+        totals = totals.isel({longitude: slice(left, left + obs.sizes[longitude])})
+    denominator = totals.valid.where(totals.valid >= min_coverage * size ** len(dims))
+    return totals.obs / denominator, totals.mod / denominator
+
+
 def FSS(
     obs: Union[xr.DataArray, np.ndarray],
     mod: Union[xr.DataArray, np.ndarray],
@@ -36,6 +63,9 @@ def FSS(
     threshold: Optional[float] = None,
     dim: Optional[Union[str, Iterable[str]]] = None,
     axis: Optional[Union[int, str, Iterable[Union[int, str]]]] = None,
+    *,
+    boundary: Optional[str] = None,
+    min_coverage: float = 1.0,
 ) -> Union[xr.DataArray, np.ndarray, float]:
     """
     Fractions Skill Score (FSS) (Aero Protocol).
@@ -60,6 +90,11 @@ def FSS(
         If None, uses all dimensions.
     axis : int, str, or iterable of int or str, optional
         Axis or axes along which to compute the fractions.
+    boundary : {"valid", "periodic"}, optional
+        Use common paired-window semantics. Periodic wraps the last
+        spatial dimension. None preserves each backend's historical edge rules.
+    min_coverage : float, optional
+        Minimum fraction of finite pairs in a complete window when boundary is set.
 
     Returns
     -------
@@ -74,15 +109,30 @@ def FSS(
     >>> mod = xr.DataArray(np.random.rand(10, 10), dims=['lat', 'lon'])
     >>> score = FSS(obs, mod, window_size=3, threshold=0.5)
     """
+    if boundary is not None:
+        labeled = isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray)
+        if not labeled:
+            obs, mod = xr.DataArray(obs), xr.DataArray(mod)
+        dims = _resolve_axis_to_dim(obs, dim if dim is not None else axis)
+        dims = [dims] if isinstance(dims, str) else list(dims)
+        obs_frac, mod_frac = _window_fractions(obs, mod, dims, window_size, threshold, boundary, min_coverage)
+        numerator = ((obs_frac - mod_frac) ** 2).sum(dims, min_count=1)
+        denominator = (obs_frac**2 + mod_frac**2).sum(dims, min_count=1)
+        result = 1.0 - numerator / denominator.where(denominator > 0)
+        if labeled:
+            return _update_history(result, "Fractions Skill Score (FSS)")
+        return result.item() if result.ndim == 0 else result.to_numpy()
+
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
         obs, mod = xr.align(obs, mod, join="inner")
 
+        valid = np.isfinite(obs) & np.isfinite(mod)
         if threshold is None:
             # Use xarray's native mean to maintain laziness
-            threshold = obs.mean()
+            threshold = obs.where(valid).mean()
 
-        obs_binary = (obs >= threshold).astype(float)
-        mod_binary = (mod >= threshold).astype(float)
+        obs_binary = (obs >= threshold).where(valid)
+        mod_binary = (mod >= threshold).where(valid)
 
         # Rolling mean for fractions
         # Resolve dimensions using Aero Protocol utility
@@ -105,14 +155,17 @@ def FSS(
     obs_arr = np.asarray(obs)
     mod_arr = np.asarray(mod)
 
+    valid = np.isfinite(obs_arr) & np.isfinite(mod_arr)
     if threshold is None:
-        threshold = np.nanmean(obs_arr)
+        threshold = np.nanmean(np.where(valid, obs_arr, np.nan))
 
-    obs_binary = (obs_arr >= threshold).astype(float)
-    mod_binary = (mod_arr >= threshold).astype(float)
+    obs_binary = ((obs_arr >= threshold) & valid).astype(float)
+    mod_binary = ((mod_arr >= threshold) & valid).astype(float)
 
-    obs_frac = _uniform_filter(obs_binary, window_size)
-    mod_frac = _uniform_filter(mod_binary, window_size)
+    available = _uniform_filter(valid, window_size)
+    denominator = np.where(available > 0, available, np.nan)
+    obs_frac = _uniform_filter(obs_binary, window_size) / denominator
+    mod_frac = _uniform_filter(mod_binary, window_size) / denominator
 
     # Use specified axis for mean calculation if provided
     mse = np.nanmean((obs_frac - mod_frac) ** 2, axis=axis)
@@ -193,3 +246,43 @@ def VETS(
     with np.errstate(divide="ignore", invalid="ignore"):
         res = np.where(denominator == 0, 1.0, (hits - hits_random) / denominator)
         return res.item() if np.ndim(res) == 0 else res
+
+
+def multiscale_fss(
+    obs: xr.DataArray,
+    mod: xr.DataArray,
+    *,
+    windows: Iterable[int],
+    thresholds: Iterable[float],
+    dim: Union[str, Iterable[str]],
+    boundary: str = "valid",
+    min_coverage: float = 1.0,
+) -> xr.DataArray:
+    """Return FSS by window size and threshold for structured-grid neighborhoods.
+
+    Periodic boundaries wrap the final spatial dimension only.
+    """
+    windows, thresholds = list(windows), list(thresholds)
+    if not windows or not thresholds or len(set(windows)) != len(windows) or len(set(thresholds)) != len(thresholds):
+        raise ValueError("Supply nonempty, unique windows and thresholds.")
+    if not np.isfinite(thresholds).all() or any(
+        not isinstance(size, (int, np.integer)) or size < 1 for size in windows
+    ):
+        raise ValueError("Require finite thresholds and positive integer windows.")
+    if {"window", "threshold"} & (set(obs.dims) | set(mod.dims)):
+        raise ValueError("The 'window' and 'threshold' dimensions are reserved for the result.")
+    spatial_dims = [dim] if isinstance(dim, str) else list(dim)
+    threshold = xr.DataArray(thresholds, coords={"threshold": thresholds}, dims="threshold")
+    scores = [
+        FSS(
+            obs,
+            mod,
+            window_size=size,
+            threshold=threshold,
+            dim=spatial_dims,
+            boundary=boundary,
+            min_coverage=min_coverage,
+        )
+        for size in windows
+    ]
+    return _update_history(xr.concat(scores, dim=xr.IndexVariable("window", windows)), "Multiscale FSS")

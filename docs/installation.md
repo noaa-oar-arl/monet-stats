@@ -26,8 +26,7 @@ Monet Stats requires the following Python packages (installed automatically by p
 - **SciPy**: ≥1.7.0
 - **XArray**: ≥2023.5.0
 
-Optional backends are provided as extras: `dask` (Dask + distributed) and
-`cubed` (Cubed + cubed-xarray). See [Optional Dependencies](#optional-dependencies).
+The optional `dask` extra installs Dask and distributed. See [Optional Dependencies](#optional-dependencies).
 
 ## Installation Methods
 
@@ -131,10 +130,12 @@ pip install netcdf4 zarr
 ```bash
 # Dask backend
 pip install "monet-stats[dask]"
-
-# Cubed backend
-pip install "monet-stats[cubed]"
 ```
+
+**Migration from 1.0.0:** Cubed support has been removed. Install
+`monet-stats[dask]` and use `DataArray.chunk({"time": 24})` (or
+`Dataset.chunk()`) to prepare lazy xarray inputs. Omit `backend` or pass
+`backend="dask"` to the performance helpers.
 
 #### Visualization
 

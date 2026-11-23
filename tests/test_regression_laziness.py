@@ -79,3 +79,42 @@ def test_regression_metrics_nan_handling():
     mod_da = xr.DataArray(mod, dims="t")
     res_s_da = RMSEs(obs_da, mod_da, axis="t")
     np.testing.assert_allclose(res_s_da.values, 0.1)
+
+
+def test_selected_scorecard_skips_order_statistics_and_delays_reads(monkeypatch):
+    da = pytest.importorskip("dask.array")
+    from dask import delayed
+
+    from monet_stats import correlation_metrics, error_metrics
+
+    reads = []
+
+    @delayed
+    def load():
+        reads.append(True)
+        return np.array([1.0, 2.0, 3.0])
+
+    def unexpected(*args, **kwargs):
+        raise AssertionError("unselected exact metric was constructed")
+
+    monkeypatch.setattr(error_metrics, "MdnB", unexpected)
+    monkeypatch.setattr(correlation_metrics, "spearmanr", unexpected)
+    obs = xr.DataArray(da.from_delayed(load(), shape=(3,), dtype=float).rechunk(1), dims="time")
+    mod = obs + 1
+    score = mod.monet_stats.verify(obs, metrics=["MB", "CRMSE", "R"])
+    assert set(score.data_vars) == {"MB", "CRMSE", "R"}
+    ds = xr.Dataset({"Obs": obs, "Mod": mod})
+    summary = ds.monet_stats.stats(metrics=["MB"], lazy=True, minval=2)
+    assert not reads
+    assert "history" in score.attrs
+    assert score.compute().MB.item() == 1
+    assert summary.compute().MB.item() == 1
+
+
+def test_weighted_moments_are_stable_for_offset_fields():
+    da = pytest.importorskip("dask.array")
+    obs = xr.DataArray(da.from_array(np.array([1e9, 1e9 + 1, 1e9 + 2]), chunks=1), dims="time")
+    mod = obs + xr.DataArray([1.0, 2.0, 3.0], dims="time")
+    score = mod.monet_stats.verify(obs, metrics=["CRMSE", "R", "MSE"], weights=np.array([1.0, 2.0, 1.0]))
+    score = score.compute()
+    np.testing.assert_allclose([score.CRMSE, score.R, score.MSE], [np.sqrt(0.5), 1.0, 4.5])

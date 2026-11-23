@@ -62,3 +62,11 @@ rmsle_score = RMSLE(obs, mod)
 ## API Reference
 
 ::: monet_stats.error_metrics
+
+## Vector RMSE
+
+Use `model.monet_stats.vector_rmse(obs, component_dim="component",
+dim=["time", "cell"], weights=cell_area)` for wind or current
+components in a common frame, with matching component coordinates.
+Each sample contributes the squared magnitude of its component errors.
+Only samples with all components finite are included.

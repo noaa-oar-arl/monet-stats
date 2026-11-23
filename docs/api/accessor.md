@@ -62,3 +62,21 @@ argument switches the weighted-metric variants into the same computation.
 The `MonetDatasetAccessor` (available via `ds.monet_stats`) provides methods for calculating summary statistics and performing analyses across multiple variables in a dataset.
 
 ::: monet_stats.accessor.MonetDatasetAccessor
+
+## Select metrics and preserve laziness
+
+Use `model.monet_stats.verify(obs, dim="time", metrics=["MB", "RMSE", "R"])`
+for an xarray Dataset of selected metrics. `join="exact"` checks that shared
+coordinate indexes already match. The default `join="inner"` uses their
+overlap. The same score selection is available through
+`dataset.monet_stats.stats(metrics=[...], lazy=True)`.
+Without `lazy=True`, the Dataset accessor returns the legacy eager dictionary.
+
+For coverage, select `observation_count`, `paired_count`, and
+`valid_weight`. The legacy dictionary's `N` remains the observation
+count. Scorecard weights may be labeled DataArrays or NumPy arrays with
+unambiguous shape. Missing or zero weights contribute no weight.
+For lazy weights, invalid values are rejected at computation time.
+Exact ranks and quantiles may require a single chunk along the reduced
+dimensions. Choose outer chunks using the product of those reduced lengths,
+outer chunk lengths, and dtype size as a lower bound on working memory.

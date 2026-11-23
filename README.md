@@ -11,7 +11,7 @@ A comprehensive statistics and utility library for atmospheric sciences, optimiz
 ## Core Mission
 
 Architect scientific pipelines that balance three competing goals:
-- **Speed**: Aggressive vectorization (Numpy/Xarray) and lazy evaluation (Dask/Cubed).
+- **Speed**: Aggressive vectorization (Numpy/Xarray) and lazy evaluation (Dask).
 - **Maintainability**: Strictly typed code with NumPy-style docstrings.
 - **Provenance**: Automatically track data lineage (what happened to the data) via `attrs['history']`.
 
@@ -23,7 +23,7 @@ pip install monet-stats
 
 Optional dependencies for Pangeo stack:
 ```bash
-pip install monet-stats[dask,cubed,docs,test]
+pip install monet-stats[dask,docs,test]
 ```
 
 ## Quick Start
@@ -78,3 +78,17 @@ This project uses a comprehensive CI/CD pipeline with the following quality chec
 - **Linting**: Ruff and Pycodestyle linting
 - **Type Checking**: MyPy static type analysis
 - **Provenance**: Mandatory `history` attribute updates on all transformations
+
+### Lazy xarray verification
+
+```python
+scorecard = model.monet_stats.verify(
+    obs, dim=["time", "cell"], join="exact", weights=cell_area,
+    metrics=["MB", "RMSE", "CRMSE", "R", "paired_count"],
+)
+```
+
+The result retains unreduced dimensions and remains lazy for Dask-backed
+inputs. Select only the metrics needed for routine scorecards. The default
+bundles retain their historical metric selections, including exact
+Spearman in `verify()` and exact median bias in `stats()`.

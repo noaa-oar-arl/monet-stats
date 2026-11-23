@@ -127,3 +127,50 @@ def test_stats_with_plugins_vectorized():
     results_v = stats(ds, axis="x", plugins=["WMAPE"])
     assert "WMAPE" in results_v
     assert np.isclose(results_v["WMAPE"], 10.0)
+
+
+def test_paired_summary_and_centered_error():
+    ds = xr.Dataset({"Obs": ("sample", [1.0, 100.0, 3.0]), "Mod": ("sample", [2.0, np.nan, 4.0])})
+    result = ds.monet_stats.stats()
+    assert result["N"] == 3
+    assert result["paired_count"] == 2
+    assert (result["Obs"], result["Mod"], result["MB"], result["CRMSE"]) == (2, 3, 1, 0)
+    assert ds.Mod.monet_stats.crmse(ds.Obs).item() == 0
+
+
+def test_chunked_bounds_and_array_weights():
+    pytest.importorskip("dask.array")
+    ds = xr.Dataset({"Obs": ("sample", [1.0, 2.0, 3.0]), "Mod": ("sample", [2.0, np.inf, 5.0])}).chunk(sample=1)
+    result = ds.monet_stats.stats(minval=2, weights=np.ones(3))
+    assert result["N"] == 2
+    assert result["paired_count"] == 1
+    assert result["valid_weight"] == 1
+    assert result["MB"] == 2
+
+
+def test_verify_exact_alignment_and_forecast_only_dimension():
+    obs = xr.DataArray([1.0, 2.0, 3.0], dims="time", coords={"time": [0, 1, 2]})
+    mod = xr.DataArray([[2.0, 3.0], [3.0, 4.0]], dims=["lead", "time"], coords={"time": [1, 2]})
+    with pytest.raises(ValueError, match="exact"):
+        mod.monet_stats.verify(obs, dim="time", join="exact")
+    result = mod.monet_stats.verify(obs, dim="time", join="inner")
+    assert result.paired_count.dims == ("lead",)
+    np.testing.assert_array_equal(result.paired_count, [2, 2])
+
+
+def test_verify_invalid_and_zero_weights():
+    obs = xr.DataArray([1.0, 2.0], dims="sample")
+    mod = obs + 1
+    with pytest.raises(ValueError, match="nonnegative"):
+        mod.monet_stats.verify(obs, weights=np.array([1.0, -1.0]))
+    result = mod.monet_stats.verify(obs, weights=np.zeros(2))
+    assert result.valid_weight.item() == 0
+    assert np.isnan(result.MB)
+
+
+def test_inner_join_retains_weights_on_the_aligned_cells():
+    obs = xr.DataArray([1.0, 2.0, 3.0], dims="time", coords={"time": [0, 1, 2]})
+    weights = xr.DataArray([100.0, 2.0, 1.0], dims="time", coords={"time": obs.time})
+    mod = xr.DataArray([3.0, 6.0], dims="time", coords={"time": [1, 2]})
+    result = mod.monet_stats.verify(obs, weights=weights, metrics=["MB", "valid_weight"])
+    np.testing.assert_allclose([result.MB.item(), result.valid_weight.item()], [5 / 3, 3])

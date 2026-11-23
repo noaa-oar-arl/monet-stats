@@ -94,3 +94,14 @@ Equitable Threat Score.
 ## API Reference
 
 ::: monet_stats.spatial_skill_metrics
+
+## Multiscale Fractions Skill Score
+
+Use `model.monet_stats.multiscale_fss(obs, windows=[1, 3, 5],
+thresholds=[0.2, 0.5], dim=["lat", "lon"])` on collocated,
+structured fields. The result retains other dimensions such as lead
+and adds `window` and `threshold`. The default requires complete
+geometric windows. `min_coverage` controls the required fraction
+of valid paired cells inside those windows. `boundary="periodic"`
+wraps the final spatial dimension only. Cases with no event in a
+valid neighborhood yield NaN in the multiscale interface.

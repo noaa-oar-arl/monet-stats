@@ -116,3 +116,102 @@ def block_bootstrap(
         "lower": float(np.nanquantile(boot_samples, alpha)),
         "upper": float(np.nanquantile(boot_samples, 1 - alpha)),
     }
+
+
+def paired_block_bootstrap(
+    obs: xr.DataArray,
+    forecast: xr.DataArray,
+    control: xr.DataArray,
+    *,
+    metric: Union[str, Callable] = "RMSE",
+    n_boot: int = 1000,
+    block_size: int = 1,
+    dim: str = "time",
+    confidence_level: float = 0.95,
+    seed: Union[int, None] = None,
+) -> xr.Dataset:
+    """Estimate a percentile interval for a paired forecast-minus-control score.
+
+    Use the same overlapping blocks of initialization dates for both models.
+    Each resample contains floor(N / block_size) complete blocks. Non-finite
+    triplets are omitted. A custom callable receives two finite NumPy vectors.
+    """
+    from .utils_stats import _reference_pairs
+
+    if not 0 < confidence_level < 1 or n_boot < 1:
+        raise ValueError("Require 0 < confidence_level < 1 and n_boot >= 1.")
+    obs, forecast, control, _ = _reference_pairs(obs, forecast, control, None)
+    n = obs.sizes[dim]
+    if not 1 <= block_size <= n:
+        raise ValueError("Require 1 <= block_size <= the number of samples.")
+    if not callable(metric) and metric not in ("MB", "MAE", "MSE", "RMSE"):
+        raise ValueError("metric must be MB, MAE, MSE, RMSE, or a callable.")
+    if callable(metric) and n * n_boot > 10_000_000:
+        raise ValueError("The requested custom-metric bootstrap exceeds 10 million sampled values per series.")
+
+    rng = np.random.default_rng(seed)
+    starts = rng.integers(n - block_size + 1, size=(n_boot, n // block_size))
+    alpha = (1 - confidence_level) / 2
+    count = obs.notnull().sum(dim)
+
+    if callable(metric):
+
+        def interval(o, f, c):
+            def delta(indices):
+                o_sample, f_sample, c_sample = o[indices], f[indices], c[indices]
+                valid = np.isfinite(o_sample)
+                if not valid.any():
+                    return np.nan
+                return metric(o_sample[valid], f_sample[valid]) - metric(o_sample[valid], c_sample[valid])
+
+            original = delta(slice(None))
+            differences = np.array([delta((start[:, None] + np.arange(block_size)).ravel()) for start in starts])
+            low, high = np.nanquantile(differences, [alpha, 1 - alpha])
+            return original, low, high
+
+        original, lower, upper = xr.apply_ufunc(
+            interval,
+            *(ensure_single_chunk(field, dim) for field in (obs, forecast, control)),
+            input_core_dims=[[dim]] * 3,
+            output_core_dims=[[]] * 3,
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[float] * 3,
+        )
+    else:
+        errors = xr.Dataset({"forecast": forecast - obs, "control": control - obs})
+        if metric == "MAE":
+            errors = abs(errors)
+        elif metric in ("MSE", "RMSE"):
+            errors = errors**2
+
+        def finish(values):
+            return np.sqrt(values) if metric == "RMSE" else values
+
+        original = finish(errors.forecast.mean(dim)) - finish(errors.control.mean(dim))
+        partials = errors.fillna(0).assign(count=obs.notnull().astype(float))
+        totals = partials.rolling({dim: block_size}).sum().isel({dim: slice(block_size - 1, None)})
+
+        def interval(f, c, n_valid):
+            # Process resamples in bounded batches to avoid a bootstrap-by-time output array.
+            differences = np.empty(n_boot)
+            for begin in range(0, n_boot, 64):
+                indices = starts[begin : begin + 64]
+                denominator = n_valid[indices].sum(axis=-1)
+                denominator = np.where(denominator > 0, denominator, np.nan)
+                first = finish(f[indices].sum(axis=-1) / denominator)
+                second = finish(c[indices].sum(axis=-1) / denominator)
+                differences[begin : begin + len(indices)] = first - second
+            return tuple(np.nanquantile(differences, [alpha, 1 - alpha]))
+
+        lower, upper = xr.apply_ufunc(
+            interval,
+            *(ensure_single_chunk(totals[name], dim) for name in ("forecast", "control", "count")),
+            input_core_dims=[[dim]] * 3,
+            output_core_dims=[[]] * 2,
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[float] * 2,
+        )
+    result = xr.Dataset({"difference": original, "lower": lower, "upper": upper, "paired_count": count})
+    return _update_history(result, "Paired block bootstrap")

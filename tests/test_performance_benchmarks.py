@@ -409,3 +409,19 @@ PERFORMANCE_THRESHOLDS = {
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--benchmark-compare"])
+
+
+def test_selected_xarray_scorecard_parallel_reductions(benchmark):
+    """Measure a scorecard that reduces independent chunks over all input axes."""
+    da = pytest.importorskip("dask.array")
+    rng = da.random.default_rng(42)
+    obs = xr.DataArray(rng.random((12, 36, 72), chunks=(3, 9, 18)), dims=("time", "lat", "lon"))
+    model = obs * 0.75 + 0.25
+    from monet_stats import stats
+
+    scorecard = stats(xr.Dataset({"Obs": obs, "Mod": model}), metrics=["MB", "MAE", "RMSE", "R"], lazy=True)
+    graph = scorecard.__dask_graph__()
+    assert all("rechunk-merge" not in layer for layer in graph.layers)
+    result = benchmark(lambda: scorecard.compute(scheduler="threads", num_workers=2))
+    assert result.MB.item() == pytest.approx(result.MAE.item())
+    assert result.R.item() == pytest.approx(1)

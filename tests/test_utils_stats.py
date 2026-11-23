@@ -407,3 +407,13 @@ class TestUtilsStats:
         result = circlebias(np.array([200, -200]))
         expected = np.array([-160, 160])  # 200 -> -160, -200 -> 160
         np.testing.assert_array_equal(result, expected)
+
+
+def test_ensure_single_chunk_keeps_other_dimensions():
+    pytest.importorskip("dask.array")
+    from monet_stats.utils_stats import ensure_single_chunk
+
+    data = xr.DataArray(np.arange(12).reshape(3, 4), dims=["x", "y"]).chunk({"x": 1, "y": 2})
+    result = ensure_single_chunk(data, "x")
+    assert result.chunks == ((3,), (2, 2))
+    xr.testing.assert_identical(result.compute(), data.compute())

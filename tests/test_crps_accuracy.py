@@ -68,3 +68,36 @@ def test_crps_empty_ensemble():
     obs = np.array([1, 2, 3, 4, 5])
     res = CRPS(ens, obs, axis=0)
     assert np.all(np.isnan(res))
+
+
+def test_fair_crps_and_reference_skill():
+    from monet_stats import CRPSS
+
+    ensemble = xr.DataArray([[0.0, 0.0], [2.0, 2.0]], dims=("member", "case"))
+    obs = xr.DataArray([1.0, 1.0], dims="case")
+    ref = xr.DataArray([[2.0, 2.0], [2.0, 2.0]], dims=("member", "case"))
+    np.testing.assert_allclose(CRPS(ensemble, obs, axis="member", fair=True), [0, 0])
+    assert CRPSS(ensemble, obs, ref, dim="case", fair=True, weights=[1, 2]).item() == pytest.approx(1.0)
+    assert np.isnan(CRPS(ensemble.isel(member=slice(1)), obs, axis="member", fair=True)).all()
+
+
+def test_spread_rmse_uses_common_support():
+    from monet_stats import spread_rmse
+
+    ens = xr.DataArray([[0.0, 0.0, 99.0], [2.0, 4.0, np.nan]], dims=("member", "case"))
+    obs = xr.DataArray([0.0, 0.0, 0.0], dims="case")
+    result = spread_rmse(ens, obs, dim="case")
+    np.testing.assert_allclose([result.spread, result.rmse], np.sqrt([2.5, 2.5]))
+    assert result.paired_count.item() == 2
+
+
+def test_chunked_member_axis_ensemble_accessor_scores():
+    pytest.importorskip("dask.array")
+    ens = xr.DataArray([[0.0, 2.0], [2.0, 4.0]], dims=("member", "case")).chunk(member=1, case=1)
+    obs = xr.DataArray([1.0, 3.0], dims="case").chunk(case=2)
+    score = ens.monet_stats.crps(obs, dim="member", fair=True)
+    np.testing.assert_allclose(score.compute(), 0)
+    skill = ens.monet_stats.crpss(obs, obs + 1, dim="case", fair=True)
+    np.testing.assert_allclose(skill.compute(), 1)
+    spread = ens.monet_stats.spread_rmse(obs, dim="case")
+    np.testing.assert_allclose(spread.compute().spread, 1)

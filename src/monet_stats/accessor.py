@@ -2,7 +2,7 @@
 Xarray accessors for the MONET Stats package (Aero Protocol Compliant).
 """
 
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
@@ -466,8 +466,9 @@ class MonetDataArrayAccessor:
             - std_mod: Standard deviation of model predictions.
             - correlation: Pearson correlation coefficient.
         """
-        obs, mod = xr.align(obs, self._obj, join="inner")
-        from .utils_stats import _resolve_axis_to_dim, _update_history
+        from .utils_stats import _finite_pairs, _resolve_axis_to_dim, _update_history
+
+        obs, mod = _finite_pairs(obs, self._obj)
 
         d = _resolve_axis_to_dim(obs, dim)
 
@@ -1483,7 +1484,7 @@ class MonetDataArrayAccessor:
         """
         return spatial_skill_metrics.VETS(obs, self._obj, dim=dim)
 
-    def crps(self, obs: xr.DataArray, dim: Union[int, str] = 0) -> xr.DataArray:
+    def crps(self, obs: xr.DataArray, dim: Union[int, str] = 0, *, fair: bool = False) -> xr.DataArray:
         """
         Compute Continuous Ranked Probability Score (CRPS).
 
@@ -1499,7 +1500,7 @@ class MonetDataArrayAccessor:
         xarray.DataArray
             CRPS values.
         """
-        return spatial_ensemble_metrics.CRPS(self._obj, obs, axis=dim)
+        return spatial_ensemble_metrics.CRPS(self._obj, obs, axis=dim, fair=fair)
 
     def sal(
         self,
@@ -2087,12 +2088,101 @@ class MonetDataArrayAccessor:
             self._obj, lat_dim=lat_dim, lon_dim=lon_dim, method=method, window_size=window_size, threshold=threshold
         )
 
+    def anomaly_correlation(
+        self, obs: xr.DataArray, climatology: xr.DataArray, *, dim=None, weights=None, centered=False
+    ) -> xr.DataArray:
+        """Calculate anomaly correlation relative to a shared climatology."""
+        return correlation_metrics.anomaly_correlation(
+            obs, self._obj, climatology, dim=dim, weights=weights, centered=centered
+        )
+
+    def mse_skill_score(self, obs: xr.DataArray, reference: xr.DataArray, *, dim=None, weights=None) -> xr.DataArray:
+        """Calculate mean squared error skill against a reference forecast."""
+        return efficiency_metrics.mse_skill_score(obs, self._obj, reference, dim=dim, weights=weights)
+
+    def quantile_bias(self, obs: xr.DataArray, *, q=0.5, dim=None) -> xr.DataArray:
+        """Calculate exact forecast-minus-observation quantile differences."""
+        return distribution_metrics.quantile_bias(obs, self._obj, q=q, dim=dim)
+
+    def paired_block_bootstrap(
+        self,
+        obs: xr.DataArray,
+        control: xr.DataArray,
+        *,
+        metric="RMSE",
+        n_boot=1000,
+        block_size=1,
+        dim="time",
+        confidence_level=0.95,
+        seed=None,
+    ) -> xr.Dataset:
+        """Estimate the interval for a paired forecast-minus-control score."""
+        return uncertainty.paired_block_bootstrap(
+            obs,
+            self._obj,
+            control,
+            metric=metric,
+            n_boot=n_boot,
+            block_size=block_size,
+            dim=dim,
+            confidence_level=confidence_level,
+            seed=seed,
+        )
+
+    def crpss(
+        self,
+        obs: xr.DataArray,
+        reference: xr.DataArray,
+        *,
+        member_dim="member",
+        reference_member_dim=None,
+        dim=None,
+        weights=None,
+        fair=False,
+    ) -> xr.DataArray:
+        """Calculate CRPS skill of this ensemble against the reference."""
+        return spatial_ensemble_metrics.CRPSS(
+            self._obj,
+            obs,
+            reference,
+            member_dim=member_dim,
+            reference_member_dim=reference_member_dim,
+            dim=dim,
+            weights=weights,
+            fair=fair,
+        )
+
+    def spread_rmse(self, obs: xr.DataArray, *, member_dim="member", dim=None, weights=None) -> xr.Dataset:
+        """Compare the ensemble's RMS spread and ensemble-mean RMSE."""
+        return spatial_ensemble_metrics.spread_rmse(self._obj, obs, member_dim=member_dim, dim=dim, weights=weights)
+
+    def vector_rmse(self, obs: xr.DataArray, *, component_dim="component", dim=None, weights=None) -> xr.DataArray:
+        """Calculate vector RMSE for collocated common-frame vectors."""
+        return error_metrics.vector_rmse(obs, self._obj, component_dim=component_dim, dim=dim, weights=weights)
+
+    def multiscale_fss(
+        self, obs: xr.DataArray, *, windows, thresholds, dim, boundary="valid", min_coverage=1.0
+    ) -> xr.DataArray:
+        """Evaluate Fractions Skill Score across spatial scales and event thresholds."""
+        return spatial_skill_metrics.multiscale_fss(
+            obs,
+            self._obj,
+            windows=windows,
+            thresholds=thresholds,
+            dim=dim,
+            boundary=boundary,
+            min_coverage=min_coverage,
+        )
+
     def verify(
         self,
         obs: xr.DataArray,
         dim: Optional[Union[str, List[str]]] = None,
         threshold: Optional[float] = None,
         weights: Optional[Union[np.ndarray, xr.DataArray]] = None,
+        *,
+        join: str = "inner",
+        metrics: Optional[Iterable[str]] = None,
     ) -> xr.Dataset:
         """
         Calculate a bundle of common evaluation metrics (Aero Protocol).
@@ -2108,46 +2198,29 @@ class MonetDataArrayAccessor:
             If provided, categorical metrics are included in the bundle.
         weights : xarray.DataArray or numpy.ndarray, optional
             Weights for the weighted metrics.
+        join : {"inner", "exact"}, optional
+            Require exact coordinate matching or use the overlapping labels.
+        metrics : iterable of str, optional
+            Select built-in scores by name. None preserves the default bundle.
 
         Returns
         -------
         xarray.Dataset
             Dataset containing common evaluation metrics.
         """
-        metrics = {
-            "MAE": error_metrics.MAE(obs, self._obj, axis=dim, weights=weights),
-            "RMSE": error_metrics.RMSE(obs, self._obj, axis=dim, weights=weights),
-            "MSE": error_metrics.MSE(obs, self._obj, axis=dim, weights=weights),
-            "MB": error_metrics.MB(obs, self._obj, axis=dim, weights=weights),
-            "R": correlation_metrics.pearsonr(obs, self._obj, axis=dim),
-            "SpearmanR": correlation_metrics.spearmanr(obs, self._obj, axis=dim),
-            "IOA": error_metrics.IOA(obs, self._obj, axis=dim),
-            "NMB": relative_metrics.NMB(obs, self._obj, axis=dim, weights=weights),
-            "NME": relative_metrics.NME(obs, self._obj, axis=dim),
-            "MNB": error_metrics.MNB(obs, self._obj, axis=dim),
-            "MNE": error_metrics.MNE(obs, self._obj, axis=dim),
-            "NSE": efficiency_metrics.NSE(obs, self._obj, axis=dim),
-            "R2": correlation_metrics.R2(obs, self._obj, axis=dim),
-            "FAC2": error_metrics.FAC2(obs, self._obj, axis=dim),
-        }
+        from ._verification import VERIFY_METRICS, _build_scorecard
 
-        if threshold is not None:
-            metrics.update(
-                {
-                    "POD": contingency_metrics.POD(obs, self._obj, minval=threshold, axis=dim),
-                    "FAR": contingency_metrics.FAR(obs, self._obj, minval=threshold, axis=dim),
-                    "HSS": contingency_metrics.HSS(obs, self._obj, minval=threshold, axis=dim),
-                    "CSI": contingency_metrics.CSI(obs, self._obj, minval=threshold, axis=dim),
-                    "TSS": contingency_metrics.TSS(obs, self._obj, minval=threshold, axis=dim),
-                    "ETS": contingency_metrics.ETS(obs, self._obj, minval=threshold, axis=dim),
-                    "FBI": contingency_metrics.FBI(obs, self._obj, minval=threshold, axis=dim),
-                    "BSS_binary": contingency_metrics.BSS_binary(obs, self._obj, threshold=threshold, axis=dim),
-                }
-            )
-        res = xr.Dataset(metrics)
-        from .utils_stats import _update_history
-
-        return _update_history(res, "Verification metrics bundle (verify)")
+        results, _, _, _ = _build_scorecard(
+            obs,
+            self._obj,
+            axis=dim,
+            weights=weights,
+            join=join,
+            threshold=threshold,
+            metrics=metrics,
+            defaults=VERIFY_METRICS,
+        )
+        return _update_history(xr.Dataset(results), "Verification metrics bundle (verify)")
 
 
 @xr.register_dataset_accessor("monet_stats")
@@ -2169,7 +2242,11 @@ class MonetDatasetAccessor:
         dim: Optional[Union[str, List[str]]] = None,
         plugins: Optional[List[str]] = None,
         weights: Optional[Union[np.ndarray, xr.DataArray]] = None,
-    ) -> dict:
+        *,
+        join: str = "inner",
+        metrics: Optional[Iterable[str]] = None,
+        lazy: bool = False,
+    ) -> Union[dict, xr.Dataset]:
         """
         Calculate summary statistics for observations and model results.
 
@@ -2207,6 +2284,9 @@ class MonetDatasetAccessor:
             axis=dim,
             plugins=plugins,
             weights=weights,
+            join=join,
+            metrics=metrics,
+            lazy=lazy,
         )
 
     def climatology(self, freq: str = "season", method: str = "mean", dim: str = "time") -> xr.Dataset:
