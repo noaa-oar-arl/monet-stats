@@ -8,7 +8,14 @@ import numpy as np
 import xarray as xr
 
 from .error_metrics import IOA, RMSE, IOA_m
-from .utils_stats import _resolve_axis_to_dim, _update_history, circlebias, circlebias_m, matchedcompressed
+from .utils_stats import (
+    _finite_pairs,
+    _resolve_axis_to_dim,
+    _update_history,
+    circlebias,
+    circlebias_m,
+    matchedcompressed,
+)
 
 __all__ = [
     "IOA",
@@ -74,7 +81,7 @@ def R2(
     0.9846153846153847
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
 
         # Use native xarray correlation for speed and laziness (Aero Protocol)
@@ -719,7 +726,7 @@ def AC(
     0.9922778767136677
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
 
         obs_bar = obs.mean(dim=dim)
@@ -855,7 +862,7 @@ def taylor_skill(
     0.9995574044955781
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
 
         std_obs = obs.std(dim=dim)
@@ -941,7 +948,7 @@ def KGE(
     0.8988771192996924
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
 
         r = xr.corr(obs, mod, dim=dim)
@@ -1008,7 +1015,7 @@ def pearsonr(
     1.0
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
 
         # Use native xarray correlation for speed and laziness (Aero Protocol)
@@ -1353,7 +1360,7 @@ def CCC(
     0.9984779299847792
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
 
         # Calculate means
@@ -1538,3 +1545,27 @@ def IOA_prime(
                 result = np.where((num == 0) & (denom == 0), 1.0, result)
                 result = np.where((num != 0) & (denom == 0), -np.inf, result)
         return result.item() if np.ndim(result) == 0 else result
+
+
+def anomaly_correlation(
+    obs: xr.DataArray, mod: xr.DataArray, climatology: xr.DataArray, *, dim=None, weights=None, centered=False
+) -> xr.DataArray:
+    """Correlate anomalies relative to a common climatology on matched cells.
+
+    The default is uncentered. Set centered=True to remove each anomaly
+    field's weighted spatial mean before calculating the correlation.
+    """
+    from .utils_stats import _reference_pairs
+
+    obs, mod, climatology, weights = _reference_pairs(obs, mod, climatology, weights)
+    observed = obs - climatology
+    modeled = mod - climatology
+    if centered:
+        return _update_history(xr.corr(observed, modeled, dim=dim, weights=weights), "Centered anomaly correlation")
+    product = observed * modeled
+    a2, b2 = observed**2, modeled**2
+    if weights is not None:
+        product, a2, b2 = product * weights, a2 * weights, b2 * weights
+    denominator = np.sqrt(a2.sum(dim, min_count=1) * b2.sum(dim, min_count=1))
+    result = product.sum(dim, min_count=1) / denominator.where(denominator > 0)
+    return _update_history(result.clip(-1, 1), "Anomaly correlation")

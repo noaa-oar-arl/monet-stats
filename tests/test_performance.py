@@ -154,3 +154,18 @@ class TestPerformance:
         # (1.5 + 3.5 + 5.5) / 3 = 10.5 / 3 = 3.5
         result = parallel_compute(np.mean, data, chunk_size=2)
         assert np.isclose(result, 3.5)
+
+
+def test_unsupported_backend_before_size_checks():
+    data = xr.DataArray([1.0, 2.0], dims="sample")
+    with pytest.raises(ValueError, match="not supported"):
+        apply_lazy_threshold(data, backend="invalid")
+    with pytest.raises(ValueError, match="not supported"):
+        parallel_compute(np.mean, data.to_numpy(), backend="invalid")
+
+
+def test_optional_dask_eager_fallback(monkeypatch):
+    monkeypatch.setattr("monet_stats.performance._has_dask", lambda: False)
+    data = xr.DataArray([1.0, 2.0], dims="sample")
+    with pytest.warns(UserWarning, match="Dask is not installed"):
+        assert apply_lazy_threshold(data, force_lazy=True, backend="dask") is data

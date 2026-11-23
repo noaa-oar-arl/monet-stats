@@ -512,6 +512,27 @@ def peak_timing(
     return _update_history(res, f"Peak timing along {dim}")
 
 
+def _native_cell_area(data):
+    variables = data.data_vars.values() if isinstance(data, xr.Dataset) else (data,)
+    names = set()
+    for variable in variables:
+        spec = variable.attrs.get("cell_measures") or variable.encoding.get("cell_measures", "")
+        tokens = spec.replace(":", ": ").split()
+        if "area:" in tokens:
+            index = tokens.index("area:") + 1
+            if index < len(tokens):
+                name = tokens[index]
+                if name in data.coords or (isinstance(data, xr.Dataset) and name in data):
+                    names.add(name)
+    if len(names) > 1:
+        raise ValueError("Multiple CF cell-area measures found. Select one grid or pass explicit weights.")
+    if names:
+        return data[names.pop()]
+    if "cell_area" in data.coords or (isinstance(data, xr.Dataset) and "cell_area" in data):
+        return data["cell_area"]
+    return None
+
+
 def weighted_spatial_mean(
     data: Union[xr.DataArray, xr.Dataset],
     lat_dim: str = "lat",
@@ -559,17 +580,21 @@ def weighted_spatial_mean(
     """
     # 2. Automated Weight Selection
     if weights is None:
-        if "cell_area" in data.coords:
-            weights = data.coords["cell_area"]
-        elif isinstance(data, xr.Dataset) and "cell_area" in data.data_vars:
-            weights = data["cell_area"]
-        else:
-            try:
-                # Try to calculate area accurately (supporting regular and curvilinear)
-                weights = calculate_grid_area(data, lat_dim=lat_dim, lon_dim=lon_dim)
-            except Exception:
-                # Last resort fallback to cosine-latitude or equal weights
-                if lat_dim in data.coords or lat_dim in data.dims:
+        weights = _native_cell_area(data)
+        if weights is None:
+            has_lat = lat_dim in data.coords or lat_dim in data.dims
+            has_lon = lon_dim in data.coords or lon_dim in data.dims
+            if has_lat and has_lon:
+                lat, lon = data[lat_dim], data[lon_dim]
+                if lat.ndim == lon.ndim == 1 and lat.dims == lon.dims:
+                    raise ValueError("Unstructured meshes require native cell areas.")
+                try:
+                    weights = calculate_grid_area(data, lat_dim=lat_dim, lon_dim=lon_dim)
+                except ValueError:
+                    if lat.ndim != 1 or lon.ndim != 1 or min(lat.size, lon.size) != 1:
+                        raise
+            if weights is None:
+                if has_lat:
                     weights = np.cos(np.deg2rad(data[lat_dim]))
                 else:
                     warnings.warn(
@@ -633,7 +658,6 @@ def weighted_spatial_mean(
         # If specified dims are not present, reduce over all shared dims with weights
         reduction_dims = [d for d in data.dims if d in weights.dims]
 
-    weights.name = "weights"
     weighted_data = data.weighted(weights)
 
     if not reduction_dims:
@@ -923,6 +947,36 @@ def anomalies(
     return _update_history(res, f"Anomalies ({freq})")
 
 
+def _rectilinear_bounds(data, coordinate, *, longitude):
+    name = coordinate.attrs.get("bounds") or coordinate.encoding.get("bounds")
+    if name and (name in data.coords or (isinstance(data, xr.Dataset) and name in data)):
+        bounds = data[name]
+        cell_dim = coordinate.dims[0]
+        (vertex_dim,) = (dim for dim in bounds.dims if dim != cell_dim)
+        radians = np.deg2rad(np.asarray(bounds.transpose(cell_dim, vertex_dim)))
+        if radians.shape[1] != 2:
+            raise ValueError("Rectilinear cell bounds must have two vertices.")
+        if longitude:
+            delta = radians[:, 1] - radians[:, 0]
+            crosses_seam = (np.abs(delta) > np.pi) & ~np.isclose(np.abs(delta), 2 * np.pi)
+            radians = np.column_stack(
+                (
+                    radians[:, 0],
+                    np.where(crosses_seam, radians[:, 0] + (delta + np.pi) % (2 * np.pi) - np.pi, radians[:, 1]),
+                )
+            )
+        return radians
+
+    centers = np.deg2rad(np.asarray(coordinate))
+    if centers.size < 2:
+        raise ValueError("Coordinates with a single cell require bounds or native cell areas.")
+    if longitude:
+        centers = np.unwrap(centers)
+    midpoints = (centers[1:] + centers[:-1]) * 0.5
+    edges = np.concatenate(([2 * centers[0] - midpoints[0]], midpoints, [2 * centers[-1] - midpoints[-1]]))
+    return np.column_stack((edges[:-1], edges[1:]))
+
+
 def calculate_grid_area(
     data: Union[xr.DataArray, xr.Dataset],
     lat_dim: str = "lat",
@@ -961,35 +1015,34 @@ def calculate_grid_area(
     >>> ds = xr.Dataset(coords={"lat": lats, "lon": lons})
     >>> areas = calculate_grid_area(ds)
     """
+    native = _native_cell_area(data)
+    if native is not None:
+        return native
     lat = data[lat_dim]
     lon = data[lon_dim]
 
-    # Case 1: Regular Lat/Lon (1D coordinates)
-    if lat.ndim == 1 and lon.ndim == 1:
-        dlat_val = np.deg2rad(np.gradient(lat))
-        dlon_val = np.deg2rad(np.gradient(lon))
-
-        # Convert back to DataArrays for automatic broadcasting
-        dlat = xr.DataArray(dlat_val, coords={lat_dim: lat}, dims=(lat_dim,))
-        dlon = xr.DataArray(dlon_val, coords={lon_dim: lon}, dims=(lon_dim,))
-
-        # Area = R^2 * cos(lat) * dlat * dlon
-        lat_rad = np.deg2rad(lat)
-        area = (radius**2) * np.cos(lat_rad) * dlat * dlon
-        # Handle negative areas from descending coordinates
-        area = abs(area)
-
+    if lat.ndim == 1 and lon.ndim == 1 and lat.dims != lon.dims:
+        lat_edges = _rectilinear_bounds(data, lat, longitude=False)
+        lon_edges = _rectilinear_bounds(data, lon, longitude=True)
+        lat_band = np.abs(np.diff(np.sin(np.clip(lat_edges, -np.pi / 2, np.pi / 2)), axis=-1)).ravel()
+        lon_width = np.abs(np.diff(lon_edges, axis=-1)).ravel()
+        lat_measure = xr.DataArray(lat_band, coords=lat.coords, dims=lat.dims)
+        lon_measure = xr.DataArray(lon_width, coords=lon.coords, dims=lon.dims)
+        area = radius**2 * lat_measure * lon_measure
+        area.attrs["units"] = "m2"
         return _update_history(area, "Calculated grid area (spherical regular)")
 
     # Case 2: Curvilinear (2D coordinates)
-    elif lat.ndim == 2 and lon.ndim == 2:
+    if lat.ndim == 2 and lon.ndim == 2:
         # Approximate using Jacobian: Area = R^2 * cos(lat) * |(dlat/dx * dlon/dy) - (dlat/dy * dlon/dx)|
         # where x, y are the underlying logical dimensions
         y_dim, x_dim = lat.dims
         lat_rad = np.deg2rad(lat)
 
         dlat_dy, dlat_dx = np.gradient(np.deg2rad(lat))
-        dlon_dy, dlon_dx = np.gradient(np.deg2rad(lon))
+        longitude = np.deg2rad(np.asarray(lon))
+        dlon_dy = np.gradient(np.unwrap(longitude, axis=0), axis=0)
+        dlon_dx = np.gradient(np.unwrap(longitude, axis=1), axis=1)
 
         jacobian = np.abs(dlat_dx * dlon_dy - dlat_dy * dlon_dx)
         area = (radius**2) * np.cos(lat_rad) * jacobian

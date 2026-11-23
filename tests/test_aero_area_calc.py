@@ -56,3 +56,29 @@ def test_weighted_spatial_mean_fallback():
     # mean should be closer to the equator value (4) than a simple average
     simple_mean = da.mean()
     assert res > simple_mean
+
+
+def test_area_is_invariant_under_longitude_wrapping():
+    lat = [-10, 0, 10]
+    first = xr.Dataset(coords={"lat": lat, "lon": [350, 0, 10]})
+    second = xr.Dataset(coords={"lat": lat, "lon": [-10, 0, 10]})
+    np.testing.assert_allclose(calculate_grid_area(first), calculate_grid_area(second))
+
+
+def test_native_cell_measures_on_unstructured_mesh():
+    from monet_stats.analysis import weighted_spatial_mean
+
+    ds = xr.Dataset(
+        {"tracer": ("cell", [1.0, 3.0], {"cell_measures": "area: areacella"}), "areacella": ("cell", [1.0, 3.0])}
+    )
+    assert weighted_spatial_mean(ds).tracer.item() == 2.5
+
+
+def test_unstructured_spatial_mean_requires_native_areas():
+    import pytest
+
+    from monet_stats.analysis import weighted_spatial_mean
+
+    data = xr.DataArray([1.0, 3.0], dims="cell", coords={"lat": ("cell", [0, 20]), "lon": ("cell", [0, 10])})
+    with pytest.raises(ValueError, match="native cell areas"):
+        weighted_spatial_mean(data)

@@ -58,15 +58,7 @@ def HSS(
     -0.3333333333333333
     """
     a, b, c, d = _contingency_table(obs, mod, minval, maxval, axis=axis)
-    denom = (a + c) * (c + d) + (a + b) * (b + d)
-    if isinstance(denom, xr.DataArray):
-        result = xr.where(denom > 0, 2 * (a * d - b * c) / denom, np.nan)
-        result.attrs = obs.attrs.copy()
-        return _update_history(result, "Heidke Skill Score (HSS)")
-    else:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            result = np.where(denom > 0, 2 * (a * d - b * c) / denom, np.nan)
-            return result.item() if np.ndim(result) == 0 else result
+    return _hss_from_counts(obs, a, b, c, d)
 
 
 def ETS(
@@ -121,17 +113,7 @@ def ETS(
     -0.2
     """
     a, b, c, d = _contingency_table(obs, mod, minval, maxval, axis=axis)
-    total = a + b + c + d
-    random_hits = ((a + b) * (a + c)) / total
-    denom = a + b + c - random_hits
-    if isinstance(denom, xr.DataArray):
-        result = xr.where(denom > 0, (a - random_hits) / denom, np.nan)
-        result.attrs = obs.attrs.copy()
-        return _update_history(result, "Equitable Threat Score (ETS)")
-    else:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            result = np.where(denom > 0, (a - random_hits) / denom, np.nan)
-            return result.item() if np.ndim(result) == 0 else result
+    return _ets_from_counts(obs, a, b, c, d)
 
 
 def CSI(
@@ -185,15 +167,7 @@ def CSI(
     0.3333333333333333
     """
     a, b, c, d = _contingency_table(obs, mod, minval, maxval, axis=axis)
-    denom = a + b + c
-    if isinstance(denom, xr.DataArray):
-        result = xr.where(denom > 0, a / denom, np.nan)
-        result.attrs = obs.attrs.copy()
-        return _update_history(result, "Critical Success Index (CSI)")
-    else:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            result = np.where(denom > 0, a / denom, np.nan)
-            return result.item() if np.ndim(result) == 0 else result
+    return _csi_from_counts(obs, a, b, c, d)
 
 
 def scores(
@@ -298,15 +272,7 @@ def POD(
     0.5
     """
     a, b, c, d = _contingency_table(obs, mod, minval, maxval, axis=axis)
-    denom = a + b
-    if isinstance(denom, xr.DataArray):
-        result = xr.where(denom > 0, a / denom, np.nan)
-        result.attrs = obs.attrs.copy()
-        return _update_history(result, "Probability of Detection (POD)")
-    else:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            result = np.where(denom > 0, a / denom, np.nan)
-            return result.item() if np.ndim(result) == 0 else result
+    return _pod_from_counts(obs, a, b, c, d)
 
 
 def FAR(
@@ -360,15 +326,7 @@ def FAR(
     0.5
     """
     a, b, c, d = _contingency_table(obs, mod, minval, maxval, axis=axis)
-    denom = a + c
-    if isinstance(denom, xr.DataArray):
-        result = xr.where(denom > 0, c / denom, np.nan)
-        result.attrs = obs.attrs.copy()
-        return _update_history(result, "False Alarm Rate (FAR)")
-    else:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            result = np.where(denom > 0, c / denom, np.nan)
-            return result.item() if np.ndim(result) == 0 else result
+    return _far_from_counts(obs, a, b, c, d)
 
 
 def FBI(
@@ -422,15 +380,7 @@ def FBI(
     1.0
     """
     a, b, c, d = _contingency_table(obs, mod, minval, maxval, axis=axis)
-    denom = a + b
-    if isinstance(denom, xr.DataArray):
-        result = xr.where(denom > 0, (a + c) / denom, np.nan)
-        result.attrs = obs.attrs.copy()
-        return _update_history(result, "Frequency Bias Index (FBI)")
-    else:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            result = np.where(denom > 0, (a + c) / denom, np.nan)
-            return result.item() if np.ndim(result) == 0 else result
+    return _fbi_from_counts(obs, a, b, c, d)
 
 
 def TSS(
@@ -485,21 +435,7 @@ def TSS(
     0.0
     """
     a, b, c, d = _contingency_table(obs, mod, minval, maxval, axis=axis)
-    pod_denom = a + b
-    pofd_denom = c + d
-
-    if isinstance(pod_denom, xr.DataArray):
-        pod = xr.where(pod_denom > 0, a / pod_denom, np.nan)
-        pofd = xr.where(pofd_denom > 0, c / pofd_denom, np.nan)
-        result = pod - pofd
-        result.attrs = obs.attrs.copy()
-        return _update_history(result, "True Skill Statistic (TSS)")
-    else:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            pod = np.where(pod_denom > 0, a / pod_denom, np.nan)
-            pofd = np.where(pofd_denom > 0, c / pofd_denom, np.nan)
-            result = pod - pofd
-            return result.item() if np.ndim(result) == 0 else result
+    return _tss_from_counts(obs, a, b, c, d)
 
 
 def BSS_binary(
@@ -550,31 +486,116 @@ def BSS_binary(
     >>> BSS_binary(obs, mod, threshold=0.5)
     0.5
     """
-    if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
-        dim = _resolve_axis_to_dim(obs, axis)
+    counts = _contingency_table(obs, mod, threshold, axis=axis)
+    return _bss_binary_from_counts(obs, *counts)
 
-        obs_binary = (obs >= threshold).astype(float)
-        mod_binary = (mod >= threshold).astype(float)
 
-        bs = ((mod_binary - obs_binary) ** 2).mean(dim=dim)
-        # bs_ref is p_bar * (1 - p_bar) where p_bar is the event frequency
-        p_bar = obs_binary.mean(dim=dim)
-        bs_ref = p_bar * (1.0 - p_bar)
-
-        result = xr.where(bs_ref > 0, 1.0 - (bs / bs_ref), 0.0)
+def _bss_binary_from_counts(obs, a, b, c, d):
+    total = a + b + c + d
+    if isinstance(total, xr.DataArray):
+        total = total.where(total > 0)
+        rate = (a + b) / total
+        reference = rate * (1 - rate)
+        result = 1 - ((b + c) / total) / reference.where(reference > 0)
         result.attrs = obs.attrs.copy()
         return _update_history(result, "Binary Brier Skill Score (BSS_binary)")
+    safe_total = np.where(total > 0, total, np.nan)
+    rate = (a + b) / safe_total
+    reference = rate * (1 - rate)
+    result = 1 - ((b + c) / safe_total) / np.where(reference > 0, reference, np.nan)
+    return result.item() if np.ndim(result) == 0 else result
+
+
+def _hss_from_counts(obs, a, b, c, d):
+    denom = (a + c) * (c + d) + (a + b) * (b + d)
+    if isinstance(denom, xr.DataArray):
+        result = xr.where(denom > 0, 2 * (a * d - b * c) / denom, np.nan)
+        result.attrs = obs.attrs.copy()
+        return _update_history(result, "Heidke Skill Score (HSS)")
     else:
-        obs_binary = (np.asarray(obs) >= threshold).astype(float)
-        mod_binary = (np.asarray(mod) >= threshold).astype(float)
-
-        bs = np.nanmean((mod_binary - obs_binary) ** 2, axis=axis)
-        p_bar = np.nanmean(obs_binary, axis=axis)
-        bs_ref = p_bar * (1.0 - p_bar)
-
         with np.errstate(divide="ignore", invalid="ignore"):
-            result = np.where(bs_ref > 0, 1.0 - (bs / bs_ref), 0.0)
+            result = np.where(denom > 0, 2 * (a * d - b * c) / denom, np.nan)
+            return result.item() if np.ndim(result) == 0 else result
+
+
+def _ets_from_counts(obs, a, b, c, d):
+    total = a + b + c + d
+    safe_total = total.where(total > 0) if isinstance(total, xr.DataArray) else np.where(total > 0, total, np.nan)
+    random_hits = ((a + b) * (a + c)) / safe_total
+    denom = a + b + c - random_hits
+    if isinstance(denom, xr.DataArray):
+        result = xr.where(denom > 0, (a - random_hits) / denom, np.nan)
+        result.attrs = obs.attrs.copy()
+        return _update_history(result, "Equitable Threat Score (ETS)")
+    else:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            result = np.where(denom > 0, (a - random_hits) / denom, np.nan)
+            return result.item() if np.ndim(result) == 0 else result
+
+
+def _csi_from_counts(obs, a, b, c, d):
+    denom = a + b + c
+    if isinstance(denom, xr.DataArray):
+        result = xr.where(denom > 0, a / denom, np.nan)
+        result.attrs = obs.attrs.copy()
+        return _update_history(result, "Critical Success Index (CSI)")
+    else:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            result = np.where(denom > 0, a / denom, np.nan)
+            return result.item() if np.ndim(result) == 0 else result
+
+
+def _pod_from_counts(obs, a, b, c, d):
+    denom = a + b
+    if isinstance(denom, xr.DataArray):
+        result = xr.where(denom > 0, a / denom, np.nan)
+        result.attrs = obs.attrs.copy()
+        return _update_history(result, "Probability of Detection (POD)")
+    else:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            result = np.where(denom > 0, a / denom, np.nan)
+            return result.item() if np.ndim(result) == 0 else result
+
+
+def _far_from_counts(obs, a, b, c, d):
+    denom = a + c
+    if isinstance(denom, xr.DataArray):
+        result = xr.where(denom > 0, c / denom, np.nan)
+        result.attrs = obs.attrs.copy()
+        return _update_history(result, "False Alarm Rate (FAR)")
+    else:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            result = np.where(denom > 0, c / denom, np.nan)
+            return result.item() if np.ndim(result) == 0 else result
+
+
+def _fbi_from_counts(obs, a, b, c, d):
+    denom = a + b
+    if isinstance(denom, xr.DataArray):
+        result = xr.where(denom > 0, (a + c) / denom, np.nan)
+        result.attrs = obs.attrs.copy()
+        return _update_history(result, "Frequency Bias Index (FBI)")
+    else:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            result = np.where(denom > 0, (a + c) / denom, np.nan)
+            return result.item() if np.ndim(result) == 0 else result
+
+
+def _tss_from_counts(obs, a, b, c, d):
+    pod_denom = a + b
+    pofd_denom = c + d
+
+    if isinstance(pod_denom, xr.DataArray):
+        pod = xr.where(pod_denom > 0, a / pod_denom, np.nan)
+        pofd = xr.where(pofd_denom > 0, c / pofd_denom, np.nan)
+        result = pod - pofd
+        result.attrs = obs.attrs.copy()
+        return _update_history(result, "True Skill Statistic (TSS)")
+    else:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            pod = np.where(pod_denom > 0, a / pod_denom, np.nan)
+            pofd = np.where(pofd_denom > 0, c / pofd_denom, np.nan)
+            result = pod - pofd
             return result.item() if np.ndim(result) == 0 else result
 
 
@@ -641,7 +662,7 @@ def _contingency_table(
 
         dim = _resolve_axis_to_dim(obs, axis)
 
-        mask = obs.notnull() & mod.notnull()
+        mask = np.isfinite(obs) & np.isfinite(mod)
 
         if maxval is not None:
             obs_event = (obs >= minval) & (obs < maxval)
@@ -667,7 +688,7 @@ def _contingency_table(
     else:
         obs = np.asarray(obs)
         mod = np.asarray(mod)
-        mask = ~np.isnan(obs) & ~np.isnan(mod)
+        mask = np.isfinite(obs) & np.isfinite(mod)
 
         # Threshold vectorization for numpy
         if isinstance(minval, (list, np.ndarray)) and not isinstance(minval, (float, int)):

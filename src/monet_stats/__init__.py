@@ -42,6 +42,7 @@ from .correlation_metrics import (
     RMSEu,
     WDIOA_m,
     WDRMSE_m,
+    anomaly_correlation,
     d1,
     kendalltau,
     pearsonr,
@@ -55,8 +56,9 @@ from .distribution_metrics import (
     MutualInformation,
     SinkhornDistance,
     WassersteinDistance,
+    quantile_bias,
 )
-from .efficiency_metrics import MAPE, MASE, NSE, PC, NSElog, NSEm, mNSE, rNSE
+from .efficiency_metrics import MAPE, MASE, NSE, PC, NSElog, NSEm, mNSE, mse_skill_score, rNSE
 from .error_metrics import (
     COE,
     CORR_INDEX,
@@ -101,6 +103,7 @@ from .error_metrics import (
     WDMB_m,
     WDMdnB,
     bias_fraction,
+    vector_rmse,
 )
 from .performance import (
     apply_lazy_threshold,
@@ -117,6 +120,7 @@ from .relative_metrics import FB, FE, MG, MPE, NMB, NMB_ABS, VG, NMdnB
 from .spatial_ensemble_metrics import (
     BSS,
     CRPS,
+    CRPSS,
     EDS,
     SAL,
     ensemble_mean,
@@ -124,8 +128,9 @@ from .spatial_ensemble_metrics import (
     rank_histogram,
     reliability_diagram,
     spread_error,
+    spread_rmse,
 )
-from .spatial_skill_metrics import FSS, VETS
+from .spatial_skill_metrics import FSS, VETS, multiscale_fss
 from .temporal_metrics import CrossWaveletTransform, DynamicTimeWarping, PhaseError
 from .track_metrics import (
     along_track_error,
@@ -137,9 +142,8 @@ from .track_metrics import (
     track_error,
     translation_speed,
 )
-from .uncertainty import block_bootstrap
+from .uncertainty import block_bootstrap, paired_block_bootstrap
 from .utils_stats import (
-    _resolve_axis_to_dim,
     _update_history,
     angular_difference,
     circlebias,
@@ -274,6 +278,14 @@ __all__ = [
     "PhaseError",
     # uncertainty
     "block_bootstrap",
+    "paired_block_bootstrap",
+    "anomaly_correlation",
+    "mse_skill_score",
+    "quantile_bias",
+    "CRPSS",
+    "spread_rmse",
+    "vector_rmse",
+    "multiscale_fss",
     # spatial_ensemble_metrics
     "EDS",
     "CRPS",
@@ -332,7 +344,11 @@ def stats(
     plugins: Optional[List[str]] = None,
     axis: Optional[Union[int, str, Iterable[Union[int, str]]]] = None,
     weights: Optional[Union[np.ndarray, xr.DataArray]] = None,
-) -> Dict[str, Any]:
+    *,
+    join: str = "inner",
+    metrics: Optional[Iterable[str]] = None,
+    lazy: bool = False,
+) -> Union[Dict[str, Any], xr.Dataset]:
     """
     Calculate summary statistics for observations and model results (Aero Protocol).
 
@@ -364,11 +380,17 @@ def stats(
         using weighted means. Supports both absolute areas and normalized weights.
         For xarray inputs, this uses `xr.DataArray.weighted()`. For pandas/numpy,
         it uses `np.ma.average()`.
+    join : {"inner", "exact"}, optional
+        Coordinate alignment policy for xarray inputs.
+    metrics : iterable of str, optional
+        Select built-in xarray scores by name. None preserves the default bundle.
+    lazy : bool, optional
+        Return an xarray Dataset without computing Dask-backed values.
 
     Returns
     -------
-    Dict[str, Any]
-        Dictionary of calculated statistics:
+    dict or xarray.Dataset
+        Calculated statistics. The default dictionary includes:
         - N: Number of valid points
         - Obs: Mean of observations
         - Mod: Mean of model
@@ -407,19 +429,17 @@ def stats(
     >>> print(results['MB'])
     0.06666666666666665
     """
-    # Restore legacy parameters filtering logic
-    if minval is not None:
-        if isinstance(data, pd.DataFrame):
-            data = data[data[obs_name] >= minval]
-        else:
-            data = data.where(data[obs_name] >= minval, drop=True)
-    if maxval is not None:
-        if isinstance(data, pd.DataFrame):
-            data = data[data[obs_name] <= maxval]
-        else:
-            data = data.where(data[obs_name] <= maxval, drop=True)
-
     if isinstance(data, pd.DataFrame):
+        if lazy or metrics is not None or join != "inner":
+            raise ValueError("lazy, metrics, and join options require xarray inputs.")
+        keep = np.ones(len(data), dtype=bool)
+        if minval is not None:
+            keep &= (data[obs_name] >= minval).fillna(False).to_numpy(dtype=bool)
+        if maxval is not None:
+            keep &= (data[obs_name] <= maxval).fillna(False).to_numpy(dtype=bool)
+        data = data.iloc[keep]
+        if weights is not None and np.ndim(weights) > 0:
+            weights = np.asarray(weights)[keep]
         obs_s = data[obs_name]
         mod_s = data[mod_name]
         obs = obs_s.values
@@ -492,40 +512,21 @@ def stats(
         return res
 
     elif isinstance(data, xr.Dataset):
-        # Ensure data is lazy if large (Aero Protocol)
-        data = apply_lazy_threshold(data)
-        obs = data[obs_name]
-        mod = data[mod_name]
+        from ._verification import SUMMARY_METRICS, _build_scorecard
 
-        # Handle align for Xarray to ensure Obs/Mod means are comparable
-        obs, mod = xr.align(obs, mod, join="inner")
-
-        dim = _resolve_axis_to_dim(obs, axis)
-
-        # Gather all metrics that can be computed together to optimize dask graph
-        metrics_lazy = {
-            "N": obs.count(dim=dim),
-            "Obs": obs.weighted(weights).mean(dim=dim) if weights is not None else obs.mean(dim=dim),
-            "Mod": mod.weighted(weights).mean(dim=dim) if weights is not None else mod.mean(dim=dim),
-            "MB": MB(obs, mod, axis=axis, weights=weights),
-            "MAE": MAE(obs, mod, axis=axis, weights=weights),
-            "RMSE": RMSE(obs, mod, axis=axis, weights=weights),
-            "R": pearsonr(obs, mod, axis=axis),
-            "IOA": IOA(obs, mod, axis=axis),
-            "NMB": NMB(obs, mod, axis=axis, weights=weights),
-            "MNB": MNB(obs, mod, axis=axis),
-            "MNE": MNE(obs, mod, axis=axis),
-            "NSE": NSE(obs, mod, axis=axis),
-            "CRMSE": CRMSE(obs, mod, axis=axis),
-            "MdnB": MdnB(obs, mod, axis=axis),
-            "KGE": KGE(obs, mod, axis=axis),
-            "R2": R2(obs, mod, axis=axis),
-            "CCC": CCC(obs, mod, axis=axis),
-            "NMSE": NMSE(obs, mod, axis=axis),
-            "FAC2": FAC2(obs, mod, axis=axis),
-            "MG": MG(obs, mod, axis=axis, weights=weights),
-            "VG": VG(obs, mod, axis=axis, weights=weights),
-        }
+        data = apply_lazy_threshold(data[[obs_name, mod_name]])
+        metrics_lazy, obs, mod, resolved_axis = _build_scorecard(
+            data[obs_name],
+            data[mod_name],
+            axis=axis,
+            weights=weights,
+            join=join,
+            threshold=threshold,
+            metrics=metrics,
+            defaults=SUMMARY_METRICS,
+            minval=minval,
+            maxval=maxval,
+        )
 
         # Include plugins (lazy evaluation)
         if plugins:
@@ -535,32 +536,12 @@ def stats(
                 except Exception:
                     metrics_lazy[p_name] = xr.DataArray(np.nan)
 
-        # Contingency scores (optional if threshold is valid)
-        try:
-            metrics_lazy["POD"] = POD(obs, mod, threshold, axis=axis)
-            metrics_lazy["FAR"] = FAR(obs, mod, threshold, axis=axis)
-            metrics_lazy["HSS"] = HSS(obs, mod, threshold, axis=axis)
-            metrics_lazy["CSI"] = CSI(obs, mod, threshold, axis=axis)
-            metrics_lazy["TSS"] = TSS(obs, mod, threshold, axis=axis)
-            metrics_lazy["ETS"] = ETS(obs, mod, threshold, axis=axis)
-            metrics_lazy["FBI"] = FBI(obs, mod, threshold, axis=axis)
-            metrics_lazy["BSS_binary"] = BSS_binary(obs, mod, threshold=threshold, axis=axis)
-        except (ValueError, TypeError):
-            # If thresholding fails during graph construction
-            metrics_lazy["POD"] = xr.DataArray(np.nan)
-            metrics_lazy["FAR"] = xr.DataArray(np.nan)
-            metrics_lazy["HSS"] = xr.DataArray(np.nan)
-            metrics_lazy["CSI"] = xr.DataArray(np.nan)
-            metrics_lazy["TSS"] = xr.DataArray(np.nan)
-            metrics_lazy["ETS"] = xr.DataArray(np.nan)
-            metrics_lazy["FBI"] = xr.DataArray(np.nan)
-            metrics_lazy["BSS_binary"] = xr.DataArray(np.nan)
-
-        # Single optimized compute call using a dummy Dataset to bundle dask graph
-        # This avoids a direct dependency on dask.base.compute
-        ds_lazy = xr.Dataset({k: v for k, v in metrics_lazy.items() if isinstance(v, (xr.DataArray, xr.Dataset))})
-        # Aero Protocol: Add lineage info to the bundled dataset
-        ds_lazy = _update_history(ds_lazy, f"Summary statistics (axis={axis})")
+        variables = {key: value for key, value in metrics_lazy.items() if isinstance(value, xr.DataArray)}
+        if lazy:
+            variables.update({key: value for key, value in metrics_lazy.items() if np.isscalar(value)})
+        ds_lazy = _update_history(xr.Dataset(variables), f"Summary statistics (axis={resolved_axis})")
+        if lazy:
+            return ds_lazy
         ds_computed = ds_lazy.compute()
 
         results = {}

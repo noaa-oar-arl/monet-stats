@@ -9,7 +9,7 @@ import xarray as xr
 
 from .correlation_metrics import KGE  # noqa: F401
 from .error_metrics import MAE, MAPE, MASE, MSE  # noqa: F401
-from .utils_stats import _nanmask_inputs, _resolve_axis_to_dim, _update_history
+from .utils_stats import _finite_pairs, _nanmask_inputs, _resolve_axis_to_dim, _update_history
 
 __all__ = ["NSE", "NSEm", "NSElog", "rNSE", "mNSE", "PC", "KGE", "MAE", "MAPE", "MASE", "MSE"]
 
@@ -61,7 +61,7 @@ def NSE(
         if not isinstance(mod, xr.DataArray):
             mod = xr.DataArray(mod, dims=obs.dims, coords=obs.coords)
 
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
 
         if weights is not None:
@@ -438,3 +438,18 @@ def PC(
             result = np.where(total == 0, np.nan, result)
 
         return result.item() if np.ndim(result) == 0 else result
+
+
+def mse_skill_score(
+    obs: xr.DataArray, mod: xr.DataArray, reference: xr.DataArray, *, dim=None, weights=None
+) -> xr.DataArray:
+    """Compare forecast MSE to reference MSE over identical weighted samples."""
+    from .utils_stats import _reference_pairs, _skill_score
+
+    obs, mod, reference, weights = _reference_pairs(obs, mod, reference, weights)
+    forecast_error = (mod - obs) ** 2
+    reference_error = (reference - obs) ** 2
+    if weights is not None:
+        forecast_error, reference_error = forecast_error * weights, reference_error * weights
+    result = _skill_score(forecast_error.sum(dim, min_count=1), reference_error.sum(dim, min_count=1))
+    return _update_history(result, "Mean squared error skill score")

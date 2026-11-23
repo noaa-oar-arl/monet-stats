@@ -120,3 +120,35 @@ def test_vets_dim_reduction():
     # Reduce over all using axis
     score_all = VETS(obs, mod, axis=[0, 1, 2])
     assert score_all.ndim == 0
+
+
+def test_fss_explicit_boundary_agrees_across_array_types():
+    obs = np.zeros((3, 3))
+    mod = np.zeros((3, 3))
+    obs[0, 0] = mod[1, 1] = 1
+    observed = xr.DataArray(obs, dims=("lat", "lon"))
+    modeled = xr.DataArray(mod, dims=("lat", "lon"))
+    for boundary in ("valid", "periodic"):
+        desired = FSS(obs, mod, threshold=0.5, axis=(0, 1), boundary=boundary)
+        actual = FSS(observed, modeled, threshold=0.5, dim=("lat", "lon"), boundary=boundary)
+        np.testing.assert_allclose(actual, desired)
+        try:
+            import dask.array  # noqa: F401
+        except ImportError:
+            continue
+        np.testing.assert_allclose(
+            FSS(observed.chunk(lat=2), modeled.chunk(lon=2), threshold=0.5, boundary=boundary).compute(), desired
+        )
+
+
+def test_multiscale_fss_keeps_case_and_labels_settings():
+    from monet_stats import multiscale_fss
+
+    observed = xr.DataArray(np.zeros((2, 5, 5)), dims=("lead", "lat", "lon"), coords={"lead": [0, 6]})
+    observed[:, 2, 2] = 2
+    predicted = observed.roll(lon=1)
+    result = multiscale_fss(observed, predicted, windows=[1, 3], thresholds=[0.5, 1.5], dim=["lat", "lon"])
+    assert set(result.dims) == {"window", "threshold", "lead"}
+    np.testing.assert_array_equal(result.lead, [0, 6])
+    np.testing.assert_allclose(result.sel(window=1), 0)
+    assert (result.sel(window=3) > 0).all()

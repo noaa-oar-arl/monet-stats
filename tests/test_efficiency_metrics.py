@@ -507,3 +507,13 @@ class TestEfficiencyMetricsEdgeCases:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+def test_mse_skill_uses_one_weighted_reference_sample():
+    from monet_stats.efficiency_metrics import mse_skill_score
+
+    obs = xr.DataArray([1.0, 2.0, 99.0], dims="cell")
+    mod = xr.DataArray([2.0, 2.0, 3.0], dims="cell")
+    ref = xr.DataArray([3.0, 3.0, np.nan], dims="cell")
+    assert mse_skill_score(obs, mod, ref, dim="cell", weights=[1.0, 2.0, 3.0]).item() == pytest.approx(5 / 6)
+    assert np.isnan(mse_skill_score(obs, mod, obs))

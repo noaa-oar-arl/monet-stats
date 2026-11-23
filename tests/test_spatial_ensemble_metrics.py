@@ -277,7 +277,7 @@ class TestSpatialEnsembleMetrics:
         ens = np.array([[1, 2], [2, 3], [3, 4]])
         obs = np.array([2, 3])
         result = rank_histogram(ens, obs)
-        expected = np.array([0, 0, 2, 0])  # Updated expected result
+        expected = np.array([0, 1, 1, 0])
         assert np.allclose(result, expected), f"Rank histogram example incorrect. Expected {expected}, got {result}"
 
         # Test with proper ensemble
@@ -594,3 +594,19 @@ class TestSpatialEnsembleMetricsEdgeCases:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+def test_bss_scores_raw_probabilities_on_common_reference_support():
+    obs = xr.DataArray([0.0, 1.0, 1.0], dims="sample")
+    prob = xr.DataArray([0.4, 0.6, 0.2], dims="sample")
+    ref = xr.DataArray([0.5, 0.5, np.nan], dims="sample")
+    assert BSS(obs, prob, threshold=0.5, reference=ref).item() == pytest.approx(0.36)
+    assert np.isnan(BSS(obs, prob, threshold=0.5, reference=obs))
+
+
+def test_member_chunks_and_missing_cases_in_rank_histogram():
+    pytest.importorskip("dask.array")
+    ensemble = xr.DataArray([[1.0, 2.0, 0.0], [2.0, 4.0, np.nan], [3.0, 5.0, 3.0]], dims=("member", "sample"))
+    obs = xr.DataArray([2.0, np.nan, 1.0], dims="sample")
+    result = rank_histogram(ensemble.chunk(member=1, sample=1), obs, axis="member")
+    np.testing.assert_allclose(result.compute(), [0, 0.5, 0.5, 0])

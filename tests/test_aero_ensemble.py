@@ -71,12 +71,9 @@ def test_crps_xarray_dask():
 def test_bss_numpy():
     obs = np.array([0, 1, 1, 0])
     mod = np.array([0.2, 0.8, 0.9, 0.3])
-    # threshold 0.5 -> mod_bin = [0, 1, 1, 0]
-    # bs = mean([0, 0, 0, 0]) = 0
-    # obs_clim = 0.5. bs_ref = mean([0.25, 0.25, 0.25, 0.25]) = 0.25
-    # BSS = 1 - 0/0.25 = 1.0
+    # Brier error is the mean squared error of the raw probabilities.
     res = BSS(obs, mod, threshold=0.5)
-    assert res == 1.0
+    np.testing.assert_allclose(res, 0.82)
 
 
 def test_sal_numpy():
@@ -104,13 +101,10 @@ def test_ensemble_mean_std_xarray():
 def test_rank_histogram_xarray():
     ens = xr.DataArray(np.array([[1, 5], [2, 6], [3, 7]]), dims=("member", "x"))
     obs = xr.DataArray(np.array([2, 6.5]), dims="x")
-    # For x=0: rank is 2.
-    # For x=1: rank is 2.
-    # Histogram of ranks [2, 2] with bins [0, 1, 2, 3] should be [0, 0, 2, 0]
+    # The first case splits between ranks 1 and 2. The second is rank 2.
     res = rank_histogram(ens, obs, axis="member")
-    # res is now a histogram DataArray
     assert res.dims == ("rank",)
-    assert np.allclose(res.values, [0, 0, 2, 0])
+    assert np.allclose(res.values, [0, 0.5, 1.5, 0])
     assert "history" in res.attrs
 
 

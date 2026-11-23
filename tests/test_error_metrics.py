@@ -594,3 +594,14 @@ class TestErrorMetricsXarray:
         result = MNE(self.obs_xr, self.mod_xr)
         assert isinstance(result, xr.DataArray)
         assert np.isclose(result, 4.56666667)
+
+
+def test_vector_rmse_is_rotation_invariant():
+    from monet_stats import vector_rmse
+
+    observed = xr.DataArray([[0.0, 0.0], [1.0, 1.0]], dims=("case", "component"))
+    errors = xr.DataArray([[3.0, 4.0], [0.0, 0.0]], dims=observed.dims)
+    predicted = observed + errors
+    rotated = xr.concat([-errors.isel(component=1), errors.isel(component=0)], dim="component")
+    assert vector_rmse(observed, predicted, dim="case").item() == pytest.approx(5 / np.sqrt(2))
+    assert vector_rmse(xr.zeros_like(rotated), rotated, dim="case").item() == pytest.approx(5 / np.sqrt(2))

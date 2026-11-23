@@ -9,6 +9,7 @@ import xarray as xr
 
 from .error_metrics import MAE, MedAE
 from .utils_stats import (
+    _finite_pairs,
     _nanmask_inputs,
     _resolve_axis_to_dim,
     _update_history,
@@ -97,7 +98,7 @@ def NMB(
     10.0
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         valid = obs.notnull() & mod.notnull()
         obs = obs.where(valid)
         mod = mod.where(valid)
@@ -639,7 +640,7 @@ def NME(
     37.5
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         valid = obs.notnull() & mod.notnull()
         obs = obs.where(valid)
         mod = mod.where(valid)
@@ -976,7 +977,7 @@ def MG(
     """
     epsilon = 1e-10
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         log_ratio = np.log(xr.where(mod <= 0, epsilon, mod)) - np.log(xr.where(obs <= 0, epsilon, obs))
         if weights is not None:
@@ -1029,7 +1030,7 @@ def VG(
     """
     epsilon = 1e-10
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         log_ratio_sq = (np.log(xr.where(mod <= 0, epsilon, mod)) - np.log(xr.where(obs <= 0, epsilon, obs))) ** 2
         if weights is not None:

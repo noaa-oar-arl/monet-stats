@@ -57,8 +57,7 @@ monet-stats/
 - **scipy**: Scientific computing and statistical functions
 - **xarray**: Multi-dimensional array data structures (required)
 
-Optional backends are provided as extras: **dask** (`dask`, `distributed`) and
-**cubed** (`cubed`, `cubed-xarray`).
+The optional **dask** extra provides `dask` and `distributed`.
 
 #### Development Dependencies
 
@@ -364,7 +363,6 @@ Integrated Analysis & Reporting
 ### Long-term Improvements
 
 1. **Type Checking**: consider adding a type checker to CI
-2. **Lazy Backends**: broaden Cubed coverage alongside Dask
 
 ## Conclusion
 
@@ -379,3 +377,72 @@ for future enhancements.
 
 _Integration Status: Production Ready with Caveats_
 _Last Updated: 2026-10-15_
+
+## Regional and lead-time verification with xarray
+
+Use actual cell area for gridded AOD, such as the native area from FV3 or
+MPAS. For station observations, group the matched station samples by region
+and keep the station and grid scorecards separate. The lead dimension is
+retained because neither reduction includes it.
+
+```python
+import xarray as xr
+
+import monet_stats  # Registers the xarray accessor
+
+aod = xr.DataArray(
+    [[0.1, 0.2, 0.7], [0.3, 0.3, 0.7]],
+    dims=("init", "cell"),
+    coords={"init": [0, 1], "cell": [0, 1, 2]},
+)
+area = xr.DataArray([1.0, 3.0, 2.0], dims="cell", coords={"cell": aod.cell})
+lead = xr.DataArray([6, 24], dims="lead", coords={"lead": [6, 24]})
+forecast = aod + 0.01 + lead * 0.001
+control = aod + 0.08
+climatology = aod.mean("init")
+
+aod_scores = forecast.monet_stats.verify(
+    aod, dim=["init", "cell"], weights=area, join="exact",
+    metrics=["MB", "RMSE", "R", "paired_count"],
+)
+aod_mse_skill = forecast.monet_stats.mse_skill_score(
+    aod, control, dim=["init", "cell"], weights=area,
+)
+aod_acc = forecast.monet_stats.anomaly_correlation(
+    aod, climatology, dim="cell", weights=area,
+)
+
+station_obs = aod.rename(cell="station").assign_coords(
+    region=("station", ["west", "west", "east"]),
+)
+station_forecast = station_obs + 0.01 + lead * 0.001
+station_scores = xr.concat(
+    [
+        station_forecast.where(station_forecast.region == region_name, drop=True)
+        .monet_stats.verify(
+            group, dim=["init", "station"], metrics=["MB", "RMSE"]
+        )
+        for region_name, group in station_obs.groupby("region")
+    ],
+    dim=xr.IndexVariable("region", ["east", "west"]),
+)
+```
+
+For a comparison interval, use `forecast.monet_stats.paired_block_bootstrap()`
+with collocated observations, a control forecast, the initialization-date
+dimension, and a seed. The result is forecast score minus control score.
+Use a series with sufficient distinct initialization-date blocks.
+
+### Dask scorecard comparison
+
+A two-thread local run compared four equivalent scores (MB, MAE, RMSE, and
+correlation) from individual functions at revision `0b3aeb4` with the shared
+scorecard. Results agreed to floating-point precision. Timings are from one
+synthetic run. RSS is the peak of the process that ran the threaded
+scheduler, including Python, libraries, and task graphs.
+
+| Layout | Chunks | Dask tasks, prior → shared | Compute seconds, prior → shared | Peak RSS MiB, prior → shared |
+| --- | --- | ---: | ---: | ---: |
+| 24 × 360 × 720 | 4 × 90 × 180 | 2,527 → 2,433 | 1.06 → 0.75 | 268.3 → 269.2 |
+| 8 × 6 × 384 × 384 | 2 × 1 × 96 × 96 | 9,823 → 9,441 | 2.04 → 1.85 | 293.7 → 297.9 |
+| 720 × 1,000 | 120 × 200 | 869 → 841 | 0.31 → 0.34 | 176.5 → 177.0 |

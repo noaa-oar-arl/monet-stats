@@ -8,7 +8,9 @@ import numpy as np
 import xarray as xr
 
 from .utils_stats import (
+    _finite_pairs,
     _nanmask_inputs,
+    _prepare_weights,
     _resolve_axis_to_dim,
     _update_history,
     circlebias,
@@ -819,11 +821,11 @@ def MB(
     array(0.17071068)
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         diff = mod - obs
         if weights is not None:
-            result = diff.weighted(weights).mean(dim=dim, keep_attrs=True)
+            result = diff.weighted(_prepare_weights(weights, obs, join="inner")).mean(dim=dim, keep_attrs=True)
             return _update_history(result, "Weighted MB")
         result = diff.mean(dim=dim, keep_attrs=True)
         return _update_history(result, "MB")
@@ -988,11 +990,11 @@ def MSE(
     0.6666666666666666
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         diff_sq = (mod - obs) ** 2
         if weights is not None:
-            result = diff_sq.weighted(weights).mean(dim=dim, keep_attrs=True)
+            result = diff_sq.weighted(_prepare_weights(weights, obs, join="inner")).mean(dim=dim, keep_attrs=True)
             return _update_history(result, "Weighted MSE")
         result = diff_sq.mean(dim=dim, keep_attrs=True)
         return _update_history(result, "MSE")
@@ -1052,11 +1054,11 @@ def MAE(
     0.6666666666666666
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         diff_abs = abs(mod - obs)
         if weights is not None:
-            result = diff_abs.weighted(weights).mean(dim=dim, keep_attrs=True)
+            result = diff_abs.weighted(_prepare_weights(weights, obs, join="inner")).mean(dim=dim, keep_attrs=True)
             return _update_history(result, "Weighted MAE")
         result = diff_abs.mean(dim=dim, keep_attrs=True)
         return _update_history(result, "MAE")
@@ -1165,7 +1167,7 @@ def CRMSE(
     0.4714045207910317
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         o_ = obs - obs.mean(dim=dim)
         m_ = mod - mod.mean(dim=dim)
@@ -1752,10 +1754,11 @@ def RMSE(
     0.816496580927726
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         diff_sq = (mod - obs) ** 2
         if weights is not None:
+            weights = _prepare_weights(weights, obs, join="inner")
             result = diff_sq.weighted(weights).mean(dim=dim, keep_attrs=True) ** 0.5
             return _update_history(result, "Weighted RMSE")
         result = diff_sq.mean(dim=dim, keep_attrs=True) ** 0.5
@@ -1817,7 +1820,7 @@ def IOA(
     0.8
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         obs_mean = obs.mean(dim=dim)
         num = ((obs - mod) ** 2).sum(dim=dim)
@@ -2149,7 +2152,7 @@ def NMSE(
     0.25
     """
     if isinstance(obs, xr.DataArray) and isinstance(mod, xr.DataArray):
-        obs, mod = xr.align(obs, mod, join="inner")
+        obs, mod = _finite_pairs(obs, mod)
         dim = _resolve_axis_to_dim(obs, axis)
         mse = ((mod - obs) ** 2).mean(dim=dim, keep_attrs=True)
         obs_var = obs.var(dim=dim)
@@ -2605,3 +2608,23 @@ def RMSLE(
         if hasattr(result, "item") and np.ndim(result) == 0:
             return np.nan if np.ma.is_masked(result) else result.item()
         return result
+
+
+def vector_rmse(
+    obs: xr.DataArray,
+    mod: xr.DataArray,
+    *,
+    component_dim: str = "component",
+    dim=None,
+    weights=None,
+) -> xr.DataArray:
+    """Compute weighted RMSE of vector errors in the same coordinate frame."""
+    if component_dim not in obs.dims or component_dim not in mod.dims:
+        raise ValueError("Both inputs must include the vector component dimension.")
+    if obs.sizes[component_dim] == 0 or not obs.get_index(component_dim).equals(mod.get_index(component_dim)):
+        raise ValueError("Vector components must have matching nonempty indexes.")
+    obs, mod = _finite_pairs(obs.astype("float64"), mod.astype("float64"))
+    error = ((mod - obs) ** 2).sum(component_dim, skipna=False)
+    weights = _prepare_weights(weights, error)
+    mean = error.mean(dim) if weights is None else error.weighted(weights).mean(dim)
+    return _update_history(np.sqrt(mean), "Vector RMSE")

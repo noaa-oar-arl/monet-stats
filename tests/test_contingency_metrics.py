@@ -312,3 +312,10 @@ class TestContingencyMetricsXarray:
 
         result = CSI(obs, mod, minval=0.5)
         assert not np.isnan(result), "CSI should handle NaN values gracefully"
+
+
+def test_binary_brier_excludes_unmatched_forecasts():
+    obs = np.array([0.0, 1.0, 1.0])
+    mod = np.array([0.0, 1.0, np.nan])
+    assert BSS_binary(obs, mod, threshold=0.5) == 1.0
+    assert np.isnan(BSS_binary(obs[:1], mod[:1], threshold=0.5))

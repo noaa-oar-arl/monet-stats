@@ -13,7 +13,7 @@ from numpy.typing import ArrayLike
 
 def is_lazy(obj: Any) -> bool:
     """
-    Check if an xarray object or array is lazy (Dask or Cubed-backed) (Aero Protocol).
+    Check if an xarray object or array is lazy (Dask-backed) (Aero Protocol).
 
     Parameters
     ----------
@@ -23,7 +23,7 @@ def is_lazy(obj: Any) -> bool:
     Returns
     -------
     bool
-        True if the object contains chunks (Dask or Cubed), False otherwise.
+        True if the object contains chunks, False otherwise.
     """
     if isinstance(obj, xr.DataArray):
         data = obj.data
@@ -40,7 +40,7 @@ def ensure_single_chunk(
     Ensure specific dimensions are in a single chunk for lazy objects (Aero Protocol).
 
     Required for operations like apply_ufunc(dask='parallelized') that cannot
-    handle chunks along core dimensions. Supports both Dask and Cubed backends.
+    handle chunks along core dimensions.
 
     Parameters
     ----------
@@ -62,51 +62,6 @@ def ensure_single_chunk(
     else:
         dims_to_rechunk = list(dim)
 
-    # Check for Cubed backend
-    is_cubed = False
-    try:
-        import cubed
-
-        if isinstance(obj, xr.DataArray):
-            if isinstance(obj.data, cubed.array_api.array_object.Array):
-                is_cubed = True
-        elif isinstance(obj, xr.Dataset):
-            if any(isinstance(obj[v].data, cubed.array_api.array_object.Array) for v in obj.data_vars):
-                is_cubed = True
-
-        if is_cubed:
-            if isinstance(obj, xr.DataArray):
-                new_chunks = list(obj.data.chunks)
-                for d in dims_to_rechunk:
-                    axis = obj.get_axis_num(d)
-                    new_chunks[axis] = obj.sizes[d]
-                return xr.DataArray(
-                    obj.data.rechunk(tuple(new_chunks)),
-                    coords=obj.coords,
-                    dims=obj.dims,
-                    attrs=obj.attrs,
-                )
-            else:
-                # For Dataset, rechunk each variable that is cubed
-                new_vars = {}
-                for v in obj.data_vars:
-                    var = obj[v]
-                    if isinstance(var.data, cubed.array_api.array_object.Array):
-                        new_chunks = list(var.data.chunks)
-                        for d in dims_to_rechunk:
-                            if d in var.dims:
-                                axis = var.get_axis_num(d)
-                                new_chunks[axis] = var.sizes[d]
-                        new_vars[v] = xr.DataArray(
-                            var.data.rechunk(tuple(new_chunks)), coords=var.coords, dims=var.dims, attrs=var.attrs
-                        )
-                    else:
-                        new_vars[v] = var
-                return xr.Dataset(new_vars, coords=obj.coords, attrs=obj.attrs)
-    except ImportError:
-        pass
-
-    # Default to Dask/Xarray rechunking
     dims_to_chunk = {d: -1 for d in dims_to_rechunk}
     return obj.chunk(dims_to_chunk)
 
@@ -503,3 +458,70 @@ def correlation(
     if isinstance(res, (xr.DataArray, xr.Dataset)):
         return _update_history(res, "correlation")
     return res
+
+
+def _validate_weights(values):
+    if np.any((values < 0) | np.isinf(values)):
+        raise ValueError("Weights must be finite and nonnegative where present.")
+    return np.where(np.isnan(values), 0.0, values)
+
+
+def _prepare_weights(weights, template, *, join="exact"):
+    if weights is None:
+        return None
+    if not isinstance(weights, xr.DataArray):
+        from itertools import combinations
+
+        values = np.asarray(weights)
+        matches = [
+            dims
+            for dims in combinations(template.dims, values.ndim)
+            if tuple(template.sizes[dim] for dim in dims) == values.shape
+        ]
+        if len(matches) != 1:
+            raise ValueError("Weight shape is ambiguous or incompatible. Supply weights as a labeled DataArray.")
+        weights = xr.DataArray(values, dims=matches[0])
+    if not set(weights.dims).issubset(template.dims):
+        raise ValueError("Weight dimensions must be a subset of the paired input dimensions.")
+    if join == "inner":
+        shared_indexes = weights.indexes.keys() & template.indexes.keys() & set(weights.dims)
+        selection = {name: template.indexes[name] for name in shared_indexes}
+        try:
+            weights = weights.sel(selection)
+        except KeyError as exc:
+            raise ValueError("Labeled weights must cover all aligned sample coordinates.") from exc
+    weights, _ = xr.align(weights, template, join="exact", copy=False)
+    return xr.apply_ufunc(_validate_weights, weights, dask="parallelized", output_dtypes=[float])
+
+
+def _prepare_pairs(obs, mod, *, join="inner", weights=None, minval=None, maxval=None):
+    if join not in ("inner", "exact"):
+        raise ValueError("join must be 'inner' or 'exact'.")
+    obs, mod = xr.align(obs, mod, join=join, copy=False)
+    obs, mod = xr.broadcast(obs, mod)
+    weights = _prepare_weights(weights, obs, join=join)
+    observed = np.isfinite(obs)
+    if minval is not None:
+        observed = observed & (obs >= minval)
+    if maxval is not None:
+        observed = observed & (obs <= maxval)
+    paired = observed & np.isfinite(mod)
+    usable = paired if weights is None else paired & (weights > 0)
+    return obs.where(usable), mod.where(usable), weights, observed, paired
+
+
+def _finite_pairs(obs, mod):
+    obs, mod = xr.align(obs, mod, join="inner", copy=False)
+    valid = np.isfinite(obs) & np.isfinite(mod)
+    return obs.where(valid), mod.where(valid)
+
+
+def _skill_score(forecast_error, reference_error):
+    return 1.0 - forecast_error / reference_error.where(reference_error > 0)
+
+
+def _reference_pairs(obs, mod, reference, weights):
+    obs, mod, reference = xr.align(obs, mod, reference, join="inner", copy=False)
+    obs, mod, reference = xr.broadcast(obs, mod, reference)
+    obs, mod, weights, _, paired = _prepare_pairs(obs.where(np.isfinite(reference)), mod, weights=weights)
+    return obs.astype("float64"), mod.astype("float64"), reference.where(paired).astype("float64"), weights
